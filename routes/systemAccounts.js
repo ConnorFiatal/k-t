@@ -51,6 +51,13 @@ router.get('/:id', (req, res) => {
   res.render('system-accounts/detail', { title: `${account.system_name} — ${account.account_username}`, account, access, eligibleStaff });
 });
 
+// Issue 1 — serve password only on explicit authenticated request, never in page HTML
+router.get('/:id/secret', (req, res) => {
+  const account = db.prepare('SELECT account_password FROM system_accounts WHERE id = ?').get(req.params.id);
+  if (!account) return res.status(404).json({ error: 'Not found' });
+  res.json({ password: account.account_password || '' });
+});
+
 router.get('/:id/edit', (req, res) => {
   const account = db.prepare('SELECT * FROM system_accounts WHERE id = ?').get(req.params.id);
   if (!account) { req.session.flash = { error: 'Account not found.' }; return res.redirect('/system-accounts'); }
@@ -67,8 +74,14 @@ router.post('/:id', (req, res) => {
     return res.redirect(`/system-accounts/${account.id}/edit`);
   }
 
+  // Issue 2 — only overwrite the stored password if a new one was actually typed;
+  // leaving the field blank preserves the existing value
+  const newPassword = account_password && account_password.trim()
+    ? account_password.trim()
+    : account.account_password;
+
   db.prepare('UPDATE system_accounts SET system_name=?, account_username=?, account_password=?, url=?, category=?, notes=? WHERE id=?')
-    .run(system_name.trim(), account_username.trim(), account_password || null, url || null, category || null, notes || null, account.id);
+    .run(system_name.trim(), account_username.trim(), newPassword || null, url || null, category || null, notes || null, account.id);
   req.session.flash = { success: 'Account updated.' };
   res.redirect(`/system-accounts/${account.id}`);
 });

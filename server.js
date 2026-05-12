@@ -1,6 +1,13 @@
+require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
+
+// Issue 6 — fail fast if session secret is not configured
+if (!process.env.SESSION_SECRET) {
+  console.error('FATAL: SESSION_SECRET environment variable is not set. Create a .env file or set it in your environment.');
+  process.exit(1);
+}
 
 const { requireLogin } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
@@ -28,10 +35,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'credential-manager-secret-change-in-production',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { httpOnly: true, maxAge: 8 * 60 * 60 * 1000 }
+  // Issue 3 — SameSite=strict prevents cross-origin requests from carrying the session cookie (CSRF mitigation)
+  cookie: { httpOnly: true, maxAge: 8 * 60 * 60 * 1000, sameSite: 'strict' }
 }));
 
 app.use((req, res, next) => {

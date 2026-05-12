@@ -32,8 +32,10 @@
       </div>
       <div class="form-group">
         <label for="account_password">Password</label>
-        <input type="text" id="account_password" name="account_password" value="<%= account ? (account.account_password || '') : '' %>" autocomplete="off">
-        <p class="field-hint">Stored in database. Ensure restricted filesystem permissions on the database file.</p>
+        <%# Issue 2 — type="password" prevents shoulder-surfing; value is never pre-filled on edit
+            (leave blank to keep the existing password; enter a new value to replace it) %>
+        <input type="password" id="account_password" name="account_password" value="" autocomplete="new-password">
+        <p class="field-hint"><% if (account && account.account_password) { %>Password is set. Leave blank to keep the current password, or type a new one to replace it.<% } else { %>Enter a password to store it, or leave blank.<% } %></p>
       </div>
     </div>
     <div class="form-group">

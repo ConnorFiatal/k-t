@@ -21,7 +21,8 @@
         <th>Password</th>
         <td>
           <% if (account.account_password) { %>
-            <span class="secret-value" data-secret="<%= account.account_password %>">••••••••</span>
+            <%# Issue 1 — password is NOT in the HTML; fetched on demand via authenticated endpoint %>
+            <span class="secret-value" data-id="<%= account.id %>">••••••••</span>
             <button type="button" class="btn btn-sm btn-ghost toggle-secret" onclick="toggleSecret(this)">Show</button>
           <% } else { %>
             <span class="text-muted">Not stored</span>
@@ -83,11 +84,24 @@
 </div>
 
 <script>
-function toggleSecret(btn) {
+async function toggleSecret(btn) {
   const span = btn.previousElementSibling;
   if (btn.textContent === 'Show') {
-    span.textContent = span.dataset.secret;
-    btn.textContent = 'Hide';
+    btn.disabled = true;
+    btn.textContent = '…';
+    try {
+      const resp = await fetch(`/system-accounts/${span.dataset.id}/secret`);
+      if (!resp.ok) throw new Error('Failed to load');
+      const { password } = await resp.json();
+      span.textContent = password || '(empty)';
+      btn.textContent = 'Hide';
+    } catch (e) {
+      span.textContent = '••••••••';
+      btn.textContent = 'Show';
+      alert('Could not load password: ' + e.message);
+    } finally {
+      btn.disabled = false;
+    }
   } else {
     span.textContent = '••••••••';
     btn.textContent = 'Show';
