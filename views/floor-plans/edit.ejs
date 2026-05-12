@@ -1,0 +1,406 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <div>
+    <h1>Edit Pins: <%= plan.name %></h1>
+    <p class="text-muted"><% if (plan.building) { %><%= plan.building %><% if (plan.floor) { %> · <% } %><% } %><% if (plan.floor) { %><%= plan.floor %><% } %></p>
+  </div>
+  <div class="btn-group">
+    <a href="/floor-plans/<%= plan.id %>" class="btn btn-primary">View Floor Plan</a>
+    <a href="/floor-plans" class="btn btn-ghost">← All Plans</a>
+  </div>
+</div>
+
+<div class="fp-editor-layout">
+
+  <!-- ── Left: floor plan canvas ── -->
+  <div class="fp-editor-main">
+    <div class="fp-editor-toolbar">
+      <span class="fp-mode-label" id="modeLabel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;vertical-align:-2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Select a door from the panel, then click the floor plan to place it
+      </span>
+      <span class="fp-save-indicator" id="saveIndicator"></span>
+    </div>
+
+    <div class="fp-canvas fp-canvas-edit" id="fpCanvas">
+      <img src="/uploads/floorplans/<%= plan.filename %>" class="fp-img" id="fpImg" alt="<%= plan.name %>" draggable="false">
+
+      <!-- Existing pins rendered server-side -->
+      <% pins.forEach(pin => { %>
+      <div
+        class="fp-pin fp-pin-placed"
+        style="left:<%= pin.x_pct.toFixed(3) %>%;top:<%= pin.y_pct.toFixed(3) %>%"
+        data-door-id="<%= pin.door_id %>"
+        data-name="<%= pin.name.replace(/"/g, '&quot;') %>"
+        data-access="<%= pin.access_type.toLowerCase() %>"
+        title="<%= pin.name %> — drag to move"
+      >
+        <span class="fp-pin-marker fp-pin-<%= pin.access_type.toLowerCase() %>">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </span>
+        <span class="fp-pin-label-edit"><%= pin.name %></span>
+      </div>
+      <% }) %>
+    </div>
+    <p class="fp-canvas-hint">Drag existing pins to reposition them · Click a pin to remove it</p>
+  </div>
+
+  <!-- ── Right: door panel ── -->
+  <div class="fp-editor-panel">
+
+    <!-- Placed doors -->
+    <div class="fp-panel-section" id="placedSection">
+      <h3 class="fp-panel-heading">Placed Doors <span class="count-badge" id="placedCount"><%= pins.length %></span></h3>
+      <div id="placedList">
+        <% if (pins.length === 0) { %>
+        <p class="fp-panel-empty" id="placedEmpty">No doors placed yet.</p>
+        <% } %>
+        <% pins.forEach(pin => { %>
+        <div class="fp-panel-door fp-panel-door-placed" id="placed-<%= pin.door_id %>">
+          <span class="fp-pin-dot fp-dot-<%= pin.access_type.toLowerCase() %>"></span>
+          <span class="fp-panel-door-name"><%= pin.name %></span>
+          <button class="fp-remove-btn" data-door-id="<%= pin.door_id %>" title="Remove pin">×</button>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <div class="fp-panel-divider"></div>
+
+    <!-- Available doors -->
+    <div class="fp-panel-section">
+      <h3 class="fp-panel-heading">Available Doors <span class="count-badge" id="availCount"><%= availableDoors.length %></span></h3>
+      <% if (availableDoors.length === 0 && pins.length === 0) { %>
+        <p class="fp-panel-empty">No doors configured. <a href="/doors/new">Add doors first.</a></p>
+      <% } else { %>
+      <input type="search" class="fp-door-search" id="doorSearch" placeholder="Filter doors…">
+      <% } %>
+      <div id="availList">
+        <% if (availableDoors.length === 0 && pins.length > 0) { %>
+        <p class="fp-panel-empty" id="availEmpty">All doors have been placed.</p>
+        <% } %>
+        <% availableDoors.forEach(d => { %>
+        <div class="fp-panel-door fp-panel-door-avail"
+             id="avail-<%= d.id %>"
+             data-door-id="<%= d.id %>"
+             data-name="<%= d.name.replace(/"/g, '&quot;') %>"
+             data-access="<%= d.access_type.toLowerCase() %>"
+             data-search="<%= d.name.toLowerCase() %><%= d.building ? ' ' + d.building.toLowerCase() : '' %><%= d.floor ? ' ' + d.floor.toLowerCase() : '' %>">
+          <span class="fp-pin-dot fp-dot-<%= d.access_type.toLowerCase() %>"></span>
+          <span class="fp-panel-door-name"><%= d.name %><% if (d.door_number) { %> <span class="text-muted">#<%= d.door_number %></span><% } %></span>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+
+  </div><!-- /panel -->
+</div><!-- /editor-layout -->
+
+<!-- Remove confirmation tooltip (shared) -->
+<div class="fp-remove-tooltip" id="removeTooltip" hidden>
+  <div class="fp-remove-tooltip-name" id="removeTooltipName"></div>
+  <div style="display:flex;gap:6px;margin-top:6px">
+    <button class="btn btn-sm btn-danger"  id="removeConfirmBtn">Remove pin</button>
+    <button class="btn btn-sm btn-ghost"   id="removeCancelBtn">Cancel</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  const PLAN_ID   = <%= plan.id %>;
+  const canvas    = document.getElementById('fpCanvas');
+  const img       = document.getElementById('fpImg');
+  const modeLabel = document.getElementById('modeLabel');
+  const saveInd   = document.getElementById('saveIndicator');
+  const tooltip   = document.getElementById('removeTooltip');
+
+  // ── State ──────────────────────────────────────────────────────────────
+  let pendingDoor = null;   // { id, name, access } — door selected for placement
+  let dragging    = null;   // { el, startX, startY, origLeft, origTop }
+  let pendingRemoveDoor = null; // { id, name } — awaiting remove confirmation
+
+  // ── Helpers ────────────────────────────────────────────────────────────
+  function setMode(door) {
+    pendingDoor = door;
+    if (door) {
+      modeLabel.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;vertical-align:-2px;color:var(--blue)"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+        Placing <strong>${escHtml(door.name)}</strong> — click the floor plan to set position
+        <button class="btn btn-sm btn-ghost" id="cancelPlaceBtn" style="margin-left:8px">Cancel</button>`;
+      canvas.classList.add('fp-placing');
+      document.getElementById('cancelPlaceBtn').addEventListener('click', () => setMode(null));
+      // Highlight selected door in panel
+      document.querySelectorAll('.fp-panel-door-avail').forEach(el => el.classList.remove('fp-panel-door-selected'));
+      const el = document.getElementById(`avail-${door.id}`);
+      if (el) el.classList.add('fp-panel-door-selected');
+    } else {
+      modeLabel.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;vertical-align:-2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Select a door from the panel, then click the floor plan to place it`;
+      canvas.classList.remove('fp-placing');
+      document.querySelectorAll('.fp-panel-door-avail').forEach(el => el.classList.remove('fp-panel-door-selected'));
+    }
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function showSave(msg, isErr) {
+    saveInd.textContent = msg;
+    saveInd.className   = 'fp-save-indicator ' + (isErr ? 'fp-save-err' : 'fp-save-ok');
+    clearTimeout(saveInd._t);
+    saveInd._t = setTimeout(() => { saveInd.textContent = ''; saveInd.className = 'fp-save-indicator'; }, 2500);
+  }
+
+  async function apiPlace(doorId, xPct, yPct) {
+    const r = await fetch(`/floor-plans/${PLAN_ID}/doors`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ door_id: doorId, x_pct: xPct, y_pct: yPct })
+    });
+    return r.json();
+  }
+
+  async function apiRemove(doorId) {
+    const r = await fetch(`/floor-plans/${PLAN_ID}/doors/${doorId}/remove`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    return r.json();
+  }
+
+  // ── Build a pin DOM element ────────────────────────────────────────────
+  function makePinEl(doorId, name, access, xPct, yPct) {
+    const div = document.createElement('div');
+    div.className = 'fp-pin fp-pin-placed';
+    div.dataset.doorId = doorId;
+    div.dataset.name   = name;
+    div.dataset.access = access;
+    div.title = `${name} — drag to move`;
+    div.style.left = xPct.toFixed(3) + '%';
+    div.style.top  = yPct.toFixed(3) + '%';
+    div.innerHTML = `
+      <span class="fp-pin-marker fp-pin-${access}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </span>
+      <span class="fp-pin-label-edit">${escHtml(name)}</span>`;
+    return div;
+  }
+
+  // ── Update placed / available counts ──────────────────────────────────
+  function refreshCounts() {
+    document.getElementById('placedCount').textContent = canvas.querySelectorAll('.fp-pin-placed').length;
+    document.getElementById('availCount').textContent  = document.querySelectorAll('#availList .fp-panel-door-avail').length;
+    const pe = document.getElementById('placedEmpty');
+    if (pe) pe.style.display = canvas.querySelectorAll('.fp-pin-placed').length === 0 ? '' : 'none';
+  }
+
+  // ── Canvas click — place a door ────────────────────────────────────────
+  canvas.addEventListener('click', async (e) => {
+    if (!pendingDoor) return;
+    if (dragging) return; // ignore click that ended a drag
+
+    const rect = canvas.getBoundingClientRect();
+    // Coordinates relative to the image, as percentage of image dimensions
+    const imgRect = img.getBoundingClientRect();
+    const xPct = ((e.clientX - imgRect.left) / imgRect.width)  * 100;
+    const yPct = ((e.clientY - imgRect.top)  / imgRect.height) * 100;
+
+    if (xPct < 0 || xPct > 100 || yPct < 0 || yPct > 100) return;
+
+    const door = pendingDoor;
+    setMode(null);
+
+    // Optimistically add pin
+    const pinEl = makePinEl(door.id, door.name, door.access, xPct, yPct);
+    canvas.appendChild(pinEl);
+    attachPinEvents(pinEl);
+
+    // Update panels
+    const availEl = document.getElementById(`avail-${door.id}`);
+    if (availEl) availEl.remove();
+
+    const placedEl = document.createElement('div');
+    placedEl.className = 'fp-panel-door fp-panel-door-placed';
+    placedEl.id = `placed-${door.id}`;
+    placedEl.innerHTML = `
+      <span class="fp-pin-dot fp-dot-${door.access}"></span>
+      <span class="fp-panel-door-name">${escHtml(door.name)}</span>
+      <button class="fp-remove-btn" data-door-id="${door.id}" title="Remove pin">×</button>`;
+    document.getElementById('placedList').appendChild(placedEl);
+    placedEl.querySelector('.fp-remove-btn').addEventListener('click', onRemoveClick);
+
+    refreshCounts();
+
+    try {
+      await apiPlace(door.id, xPct, yPct);
+      showSave('Saved ✓');
+    } catch (err) {
+      showSave('Save failed', true);
+    }
+  });
+
+  // ── Drag to reposition ─────────────────────────────────────────────────
+  function attachPinEvents(pinEl) {
+    pinEl.addEventListener('mousedown', onPinMousedown);
+    pinEl.addEventListener('click',     onPinClick);
+  }
+
+  let justDragged = false;
+
+  function onPinMousedown(e) {
+    if (pendingDoor) return; // in placement mode — don't start drag
+    e.preventDefault();
+    const pin = e.currentTarget;
+
+    const imgRect = img.getBoundingClientRect();
+    const startX  = e.clientX;
+    const startY  = e.clientY;
+    const origLeft = parseFloat(pin.style.left);
+    const origTop  = parseFloat(pin.style.top);
+
+    dragging   = { pin, startX, startY, origLeft, origTop, moved: false };
+    justDragged = false;
+
+    pin.classList.add('fp-pin-dragging');
+
+    function onMousemove(ev) {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      if (!dragging.moved && Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
+      dragging.moved = true;
+
+      const newLeft = origLeft + (dx / imgRect.width  * 100);
+      const newTop  = origTop  + (dy / imgRect.height * 100);
+      pin.style.left = Math.max(0, Math.min(100, newLeft)).toFixed(3) + '%';
+      pin.style.top  = Math.max(0, Math.min(100, newTop)).toFixed(3)  + '%';
+    }
+
+    async function onMouseup() {
+      document.removeEventListener('mousemove', onMousemove);
+      document.removeEventListener('mouseup',   onMouseup);
+      pin.classList.remove('fp-pin-dragging');
+
+      if (dragging.moved) {
+        justDragged = true;
+        setTimeout(() => { justDragged = false; }, 50);
+        try {
+          await apiPlace(parseInt(pin.dataset.doorId), parseFloat(pin.style.left), parseFloat(pin.style.top));
+          showSave('Saved ✓');
+        } catch { showSave('Save failed', true); }
+      }
+      dragging = null;
+    }
+
+    document.addEventListener('mousemove', onMousemove);
+    document.addEventListener('mouseup',   onMouseup);
+  }
+
+  // ── Click pin — show remove tooltip ───────────────────────────────────
+  function onPinClick(e) {
+    if (pendingDoor)  return;
+    if (justDragged)  return;
+
+    const pin = e.currentTarget;
+    pendingRemoveDoor = { id: parseInt(pin.dataset.doorId), name: pin.dataset.name, el: pin };
+
+    document.getElementById('removeTooltipName').textContent = pin.dataset.name;
+    tooltip.hidden = false;
+
+    // Position tooltip near the pin
+    const canvasRect = canvas.getBoundingClientRect();
+    const pinRect    = pin.getBoundingClientRect();
+    tooltip.style.left = (pinRect.left - canvasRect.left + pinRect.width/2) + 'px';
+    tooltip.style.top  = (pinRect.top  - canvasRect.top  - 8) + 'px';
+    tooltip.style.transform = 'translate(-50%, -100%)';
+
+    e.stopPropagation();
+  }
+
+  document.getElementById('removeConfirmBtn').addEventListener('click', async () => {
+    if (!pendingRemoveDoor) return;
+    const { id, name, el } = pendingRemoveDoor;
+    tooltip.hidden = true;
+    pendingRemoveDoor = null;
+
+    try {
+      const data = await apiRemove(id);
+      el.remove();
+      document.getElementById(`placed-${id}`)?.remove();
+
+      // Re-add to available list
+      const d = data.door;
+      if (d) {
+        const availEl = document.createElement('div');
+        availEl.className = `fp-panel-door fp-panel-door-avail`;
+        availEl.id = `avail-${d.id}`;
+        availEl.dataset.doorId = d.id;
+        availEl.dataset.name   = d.name;
+        availEl.dataset.access = d.access_type.toLowerCase();
+        availEl.dataset.search = (d.name + ' ' + (d.building||'') + ' ' + (d.floor||'')).toLowerCase();
+        availEl.innerHTML = `<span class="fp-pin-dot fp-dot-${d.access_type.toLowerCase()}"></span><span class="fp-panel-door-name">${escHtml(d.name)}</span>`;
+        availEl.addEventListener('click', onAvailDoorClick);
+        const emptyMsg = document.getElementById('availEmpty');
+        if (emptyMsg) emptyMsg.style.display = 'none';
+        document.getElementById('availList').appendChild(availEl);
+      }
+      refreshCounts();
+      showSave('Pin removed ✓');
+    } catch { showSave('Remove failed', true); }
+  });
+
+  document.getElementById('removeCancelBtn').addEventListener('click', () => {
+    tooltip.hidden = true;
+    pendingRemoveDoor = null;
+  });
+
+  // Hide tooltip on canvas click
+  canvas.addEventListener('click', () => {
+    if (!pendingDoor) { tooltip.hidden = true; pendingRemoveDoor = null; }
+  });
+
+  // ── Available door click — enter placement mode ────────────────────────
+  function onAvailDoorClick(e) {
+    const el = e.currentTarget;
+    setMode({ id: parseInt(el.dataset.doorId), name: el.dataset.name, access: el.dataset.access });
+  }
+
+  document.querySelectorAll('.fp-panel-door-avail').forEach(el => el.addEventListener('click', onAvailDoorClick));
+
+  // ── Remove buttons in placed list ─────────────────────────────────────
+  function onRemoveClick(e) {
+    const doorId = parseInt(e.currentTarget.dataset.doorId);
+    const pinEl  = canvas.querySelector(`.fp-pin-placed[data-door-id="${doorId}"]`);
+    if (pinEl) {
+      // Simulate click to trigger tooltip
+      pendingRemoveDoor = { id: doorId, name: pinEl.dataset.name, el: pinEl };
+      document.getElementById('removeTooltipName').textContent = pinEl.dataset.name;
+      tooltip.hidden = false;
+      const canvasRect = canvas.getBoundingClientRect();
+      const pinRect    = pinEl.getBoundingClientRect();
+      tooltip.style.left = (pinRect.left - canvasRect.left + pinRect.width/2) + 'px';
+      tooltip.style.top  = (pinRect.top  - canvasRect.top  - 8) + 'px';
+      tooltip.style.transform = 'translate(-50%, -100%)';
+    }
+  }
+
+  document.querySelectorAll('.fp-remove-btn').forEach(btn => btn.addEventListener('click', onRemoveClick));
+
+  // ── Attach events to server-rendered pins ─────────────────────────────
+  canvas.querySelectorAll('.fp-pin-placed').forEach(attachPinEvents);
+
+  // ── Door search filter ─────────────────────────────────────────────────
+  const searchInput = document.getElementById('doorSearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.toLowerCase().trim();
+      document.querySelectorAll('#availList .fp-panel-door-avail').forEach(el => {
+        el.style.display = (!q || el.dataset.search.includes(q)) ? '' : 'none';
+      });
+    });
+  }
+
+})();
+</script>
+<%- include('../partials/footer') %>

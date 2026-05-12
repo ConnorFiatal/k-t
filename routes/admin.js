@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { db } = require('../db');
+const { sendEmail } = require('./email');
 
 const router = express.Router();
 
@@ -13,8 +14,8 @@ router.get('/users/new', (req, res) => {
   res.render('admin/new-user', { title: 'New Admin User' });
 });
 
-router.post('/users', (req, res) => {
-  const { username, password, confirm_password } = req.body;
+router.post('/users', async (req, res) => {
+  const { username, password, confirm_password, email } = req.body;
   if (!username || !password) {
     req.session.flash = { error: 'Username and password are required.' };
     return res.redirect('/admin/users/new');
@@ -29,8 +30,20 @@ router.post('/users', (req, res) => {
   }
   try {
     const hash = bcrypt.hashSync(password, 10);
-    db.prepare('INSERT INTO admin_users (username, password_hash) VALUES (?, ?)').run(username.trim(), hash);
+    const emailVal = email?.trim() || null;
+    db.prepare('INSERT INTO admin_users (username, password_hash, email) VALUES (?, ?, ?)').run(username.trim(), hash, emailVal);
     req.session.flash = { success: `Admin user "${username}" created.` };
+
+    // Send welcome email if an address was provided
+    if (emailVal) {
+      const appUrl = process.env.APP_URL || 'http://localhost:3000';
+      sendEmail(emailVal, `Welcome to KeyDog — your account is ready`, 'welcome', {
+        username:  username.trim(),
+        loginUrl:  `${appUrl}/login`,
+        createdBy: req.session.user.username,
+      }).catch(err => console.error('[email] Welcome email failed:', err.message));
+    }
+
     res.redirect('/admin/users');
   } catch {
     req.session.flash = { error: 'Username already exists.' };

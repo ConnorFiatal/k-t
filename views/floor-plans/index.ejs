@@ -1,0 +1,53 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Floor Plans</h1>
+  <a href="/floor-plans/new" class="btn btn-primary">+ Upload Floor Plan</a>
+</div>
+
+<% if (plans.length === 0) { %>
+  <div class="card">
+    <p class="empty-state">No floor plans uploaded yet. <a href="/floor-plans/new">Upload one.</a></p>
+  </div>
+<% } else { %>
+  <%
+    // Group by building
+    const buildings = {};
+    plans.forEach(p => {
+      const key = p.building || '(No Building)';
+      if (!buildings[key]) buildings[key] = [];
+      buildings[key].push(p);
+    });
+  %>
+  <% Object.keys(buildings).sort().forEach(building => { %>
+  <div style="margin-bottom:2rem">
+    <h2 class="section-heading"><%= building %></h2>
+    <div class="fp-card-grid">
+      <% buildings[building].forEach(p => { %>
+      <div class="fp-index-card">
+        <a href="/floor-plans/<%= p.id %>" class="fp-thumb-link">
+          <img src="/uploads/floorplans/<%= p.filename %>" alt="<%= p.name %>" class="fp-thumb">
+          <div class="fp-thumb-overlay">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:28px;height:28px;color:#fff"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>View</span>
+          </div>
+        </a>
+        <div class="fp-index-info">
+          <div class="fp-index-title"><a href="/floor-plans/<%= p.id %>"><%= p.name %></a></div>
+          <div class="fp-index-meta">
+            <% if (p.floor) { %><span class="text-muted"><%= p.floor %></span><% } %>
+            <span class="count-badge" title="Doors placed"><%= p.door_count %> door<%= p.door_count !== 1 ? 's' : '' %></span>
+          </div>
+          <div class="fp-index-actions">
+            <a href="/floor-plans/<%= p.id %>/edit" class="btn btn-sm btn-outline">Edit Pins</a>
+            <form action="/floor-plans/<%= p.id %>/delete" method="POST" style="display:inline" onsubmit="return confirm('Delete this floor plan?')">
+              <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+            </form>
+          </div>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+  <% }) %>
+<% } %>
+<%- include('../partials/footer') %>

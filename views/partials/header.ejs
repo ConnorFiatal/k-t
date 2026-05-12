@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %> — Credential Manager</title>
+  <title><%= title %> — KeyDog</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
     <nav class="sidebar">
       <div class="sidebar-brand">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <span>CredManager</span>
+        <span>KeyDog</span>
       </div>
       <ul class="nav-links">
         <li><a href="/" class="<%= currentPath === '/' ? 'active' : '' %>">
@@ -40,6 +40,10 @@
         <li><a href="/fob-profiles" class="<%= currentPath.startsWith('/fob-profiles') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
           FOB Profiles
+        </a></li>
+        <li><a href="/floor-plans" class="<%= currentPath.startsWith('/floor-plans') ? 'active' : '' %>">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M9 21V9"/></svg>
+          Floor Plans
         </a></li>
         <li><a href="/keytrak" class="<%= currentPath.startsWith('/keytrak') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>

@@ -182,7 +182,28 @@ function initializeDatabase() {
       assigned_by TEXT NOT NULL,
       UNIQUE(keyring_id, fob_profile_id)
     );
+
+    CREATE TABLE IF NOT EXISTS floor_plans (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      building TEXT,
+      floor TEXT,
+      filename TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS floor_plan_doors (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      floor_plan_id INTEGER NOT NULL REFERENCES floor_plans(id) ON DELETE CASCADE,
+      door_id INTEGER NOT NULL REFERENCES doors(id) ON DELETE CASCADE,
+      x_pct REAL NOT NULL,
+      y_pct REAL NOT NULL,
+      UNIQUE(floor_plan_id, door_id)
+    );
   `);
+
+  // Migration: add email column to admin_users if it doesn't exist yet
+  try { db.exec('ALTER TABLE admin_users ADD COLUMN email TEXT'); } catch (_) {}
 
   const count = db.prepare('SELECT COUNT(*) AS c FROM admin_users').get();
   if (count.c === 0) {

@@ -1,0 +1,149 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <div>
+    <h1><%= plan.name %></h1>
+    <p class="text-muted">
+      <% if (plan.building) { %><%= plan.building %><% } %>
+      <% if (plan.building && plan.floor) { %> · <% } %>
+      <% if (plan.floor) { %><%= plan.floor %><% } %>
+      · <%= pins.length %> door<%= pins.length !== 1 ? 's' : '' %> placed
+    </p>
+  </div>
+  <div class="btn-group">
+    <a href="/floor-plans/<%= plan.id %>/edit" class="btn btn-outline">Edit Pins</a>
+    <a href="/floor-plans" class="btn btn-ghost">← All Plans</a>
+  </div>
+</div>
+
+<% if (pins.length === 0) { %>
+<div class="card" style="margin-bottom:1rem">
+  <p class="empty-state">No doors placed yet. <a href="/floor-plans/<%= plan.id %>/edit">Go to the editor</a> to place door pins.</p>
+</div>
+<% } %>
+
+<div class="fp-viewer-wrap">
+  <!-- Legend -->
+  <div class="fp-legend">
+    <span class="fp-legend-item"><span class="fp-pin-dot fp-dot-keyed"></span> Keyed</span>
+    <span class="fp-legend-item"><span class="fp-pin-dot fp-dot-fob"></span> FOB</span>
+    <span class="fp-legend-item"><span class="fp-legend-item"><span class="fp-pin-dot fp-dot-both"></span> Both</span></span>
+    <span class="fp-legend-tip">Click a pin to see door details</span>
+  </div>
+
+  <!-- Floor plan canvas -->
+  <div class="fp-canvas" id="fpCanvas">
+    <img src="/uploads/floorplans/<%= plan.filename %>" class="fp-img" id="fpImg" alt="<%= plan.name %>" draggable="false">
+
+    <!-- Door pins -->
+    <% pins.forEach(pin => { %>
+    <button
+      class="fp-pin"
+      style="left:<%= pin.x_pct.toFixed(3) %>%;top:<%= pin.y_pct.toFixed(3) %>%"
+      data-door-id="<%= pin.door_id %>"
+      data-name="<%= pin.name.replace(/"/g, '&quot;') %>"
+      data-access="<%= pin.access_type.toLowerCase() %>"
+      data-number="<%= pin.door_number || '' %>"
+      data-building="<%= pin.building || '' %>"
+      data-floor="<%= pin.floor || '' %>"
+      data-location="<%= pin.location || '' %>"
+      data-notes="<%= (pin.notes || '').substring(0, 120).replace(/"/g, '&quot;') %>"
+      title="<%= pin.name %>"
+      aria-label="Door: <%= pin.name %>"
+    >
+      <span class="fp-pin-marker fp-pin-<%= pin.access_type.toLowerCase() %>">
+        <!-- Door icon -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </span>
+    </button>
+    <% }) %>
+
+    <!-- Shared popover (shown/hidden by JS) -->
+    <div class="fp-popover" id="fpPopover" hidden>
+      <button class="fp-popover-close" id="fpPopoverClose" aria-label="Close">×</button>
+      <div class="fp-popover-badge" id="fpPopoverBadge"></div>
+      <div class="fp-popover-name" id="fpPopoverName"></div>
+      <div class="fp-popover-meta" id="fpPopoverMeta"></div>
+      <div class="fp-popover-notes" id="fpPopoverNotes"></div>
+      <a class="fp-popover-link btn btn-sm btn-outline" id="fpPopoverLink" href="#">View Door Config →</a>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const canvas   = document.getElementById('fpCanvas');
+  const popover  = document.getElementById('fpPopover');
+  const closeBtn = document.getElementById('fpPopoverClose');
+
+  let activePinEl = null;
+
+  function showPopover(pinEl) {
+    const d = pinEl.dataset;
+
+    // Populate content
+    document.getElementById('fpPopoverName').textContent = d.name + (d.number ? ` #${d.number}` : '');
+    document.getElementById('fpPopoverLink').href = `/doors/${d.doorId}`;
+
+    const badge = document.getElementById('fpPopoverBadge');
+    badge.textContent  = d.access.toUpperCase();
+    badge.className    = `fp-popover-badge badge badge-access-${d.access}`;
+
+    const metaParts = [d.building, d.floor, d.location].filter(Boolean);
+    const metaEl = document.getElementById('fpPopoverMeta');
+    metaEl.textContent = metaParts.join(' · ');
+    metaEl.style.display = metaParts.length ? '' : 'none';
+
+    const notesEl = document.getElementById('fpPopoverNotes');
+    notesEl.textContent = d.notes || '';
+    notesEl.style.display = d.notes ? '' : 'none';
+
+    // Position: above the pin, centered horizontally
+    const canvasRect = canvas.getBoundingClientRect();
+    const pinRect    = pinEl.getBoundingClientRect();
+
+    const pinCX = pinRect.left + pinRect.width  / 2 - canvasRect.left + canvas.scrollLeft;
+    const pinTY = pinRect.top                       - canvasRect.top  + canvas.scrollTop;
+
+    popover.hidden = false;
+    popover.style.left      = pinCX + 'px';
+    popover.style.top       = pinTY + 'px';
+    popover.style.transform = 'translate(-50%, calc(-100% - 10px))';
+
+    // Clamp horizontally so popover doesn't overflow the canvas
+    const pw = popover.offsetWidth;
+    const cw = canvas.offsetWidth;
+    const rawLeft = pinCX - pw / 2;
+    const clampedLeft = Math.max(8, Math.min(rawLeft, cw - pw - 8));
+    if (clampedLeft !== rawLeft) {
+      popover.style.left      = clampedLeft + pw / 2 + 'px';
+    }
+
+    activePinEl = pinEl;
+    pinEl.classList.add('fp-pin-active');
+  }
+
+  function hidePopover() {
+    popover.hidden = true;
+    if (activePinEl) { activePinEl.classList.remove('fp-pin-active'); activePinEl = null; }
+  }
+
+  // Pin click
+  canvas.addEventListener('click', (e) => {
+    const pin = e.target.closest('.fp-pin');
+    if (pin) {
+      e.stopPropagation();
+      if (activePinEl === pin) { hidePopover(); return; }
+      showPopover(pin);
+      return;
+    }
+    // Close popover when clicking canvas background
+    if (!e.target.closest('.fp-popover')) hidePopover();
+  });
+
+  closeBtn.addEventListener('click', hidePopover);
+
+  // Close on Escape
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hidePopover(); });
+})();
+</script>
+<%- include('../partials/footer') %>

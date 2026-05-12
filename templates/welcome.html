@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to {{appName}}</title>
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+
+          <!-- Header -->
+          <tr>
+            <td align="center" style="padding-bottom:24px;">
+              <table cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="background:#1e2a3b;border-radius:10px;padding:10px 20px;">
+                    <span style="color:#e2e8f0;font-size:18px;font-weight:700;letter-spacing:.5px;">&#128016; {{appName}}</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Card -->
+          <tr>
+            <td style="background:#ffffff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);overflow:hidden;">
+
+              <!-- Accent bar -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr><td style="background:#3b82f6;height:4px;font-size:0;">&nbsp;</td></tr>
+              </table>
+
+              <table width="100%" cellpadding="0" cellspacing="0" style="padding:36px 40px;">
+                <tr>
+                  <td>
+                    <h1 style="margin:0 0 8px;font-size:22px;color:#1e293b;">Welcome to {{appName}}</h1>
+                    <p style="margin:0 0 24px;color:#64748b;font-size:15px;">Your admin account has been created.</p>
+
+                    <!-- Account details box -->
+                    <table width="100%" cellpadding="0" cellspacing="0"
+                           style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:28px;">
+                      <tr>
+                        <td style="padding:20px 24px;">
+                          <table width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                              <td style="padding-bottom:10px;">
+                                <span style="color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;">Username</span><br>
+                                <span style="color:#1e293b;font-size:16px;font-weight:700;font-family:monospace;">{{username}}</span>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td>
+                                <span style="color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;">Login URL</span><br>
+                                <a href="{{loginUrl}}" style="color:#3b82f6;font-size:14px;word-break:break-all;">{{loginUrl}}</a>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <p style="margin:0 0 24px;color:#475569;font-size:14px;line-height:1.6;">
+                      Use the username above along with the password set by your administrator to sign in.
+                      You will be prompted to change your password on first login if required.
+                    </p>
+
+                    <!-- CTA button -->
+                    <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+                      <tr>
+                        <td style="background:#3b82f6;border-radius:6px;">
+                          <a href="{{loginUrl}}"
+                             style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;">
+                            Sign In to {{appName}} &rarr;
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <p style="margin:0;color:#94a3b8;font-size:13px;">
+                      This account was created by <strong>{{createdBy}}</strong>.
+                      If you did not expect this email, please contact your administrator.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding-top:20px;">
+              <p style="margin:0;color:#94a3b8;font-size:12px;">
+                &copy; {{year}} {{appName}} &mdash; Access &amp; Credential Management<br>
+                <a href="{{appUrl}}" style="color:#94a3b8;">{{appUrl}}</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

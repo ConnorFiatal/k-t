@@ -744,3 +744,302 @@ textarea { resize: vertical; }
 /* ── Dashboard extra stat colors ────────────────────────────── */
 .stat-slate  { background: #f1f5f9; color: #475569; }
 .stat-cyan   { background: #cffafe; color: #0e7490; }
+.stat-rose   { background: #ffe4e6; color: #be123c; }
+
+/* ══════════════════════════════════════════════════════════════
+   FLOOR PLANS
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Section heading ──────────────────────────────────────────── */
+.section-heading {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+  margin-bottom: .75rem;
+}
+
+/* ── Index grid ───────────────────────────────────────────────── */
+.fp-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+.fp-index-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: box-shadow .15s;
+}
+.fp-index-card:hover { box-shadow: var(--shadow-md); }
+
+.fp-thumb-link {
+  display: block;
+  position: relative;
+  background: #f8fafc;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+}
+.fp-thumb {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  transition: filter .2s;
+}
+.fp-thumb-overlay {
+  position: absolute; inset: 0;
+  background: rgba(30,42,59,.55);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 4px;
+  color: #fff; font-size: .8125rem; font-weight: 600;
+  opacity: 0; transition: opacity .2s;
+}
+.fp-thumb-link:hover .fp-thumb-overlay { opacity: 1; }
+.fp-thumb-link:hover .fp-thumb { filter: brightness(.8); }
+
+.fp-index-info {
+  padding: .75rem 1rem;
+}
+.fp-index-title { font-weight: 600; margin-bottom: .25rem; }
+.fp-index-title a { color: var(--text); text-decoration: none; }
+.fp-index-title a:hover { color: var(--blue); }
+.fp-index-meta { display: flex; align-items: center; gap: .5rem; margin-bottom: .6rem; font-size: .8125rem; }
+.fp-index-actions { display: flex; gap: .5rem; }
+
+/* ── Viewer ───────────────────────────────────────────────────── */
+.fp-viewer-wrap { }
+
+.fp-legend {
+  display: flex; align-items: center; gap: 1rem;
+  font-size: .8125rem; color: var(--text-muted);
+  margin-bottom: .75rem;
+  flex-wrap: wrap;
+}
+.fp-legend-item { display: flex; align-items: center; gap: 5px; }
+.fp-legend-tip  { margin-left: auto; font-style: italic; }
+
+.fp-pin-dot {
+  width: 11px; height: 11px; border-radius: 50%; display: inline-block; flex-shrink: 0;
+}
+.fp-dot-keyed { background: #3b82f6; }
+.fp-dot-fob   { background: #f59e0b; }
+.fp-dot-both  { background: #16a34a; }
+
+/* ── Canvas (shared by viewer + editor) ───────────────────────── */
+.fp-canvas {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  line-height: 0; /* prevent gap under image */
+}
+.fp-canvas-edit { cursor: default; }
+.fp-canvas-edit.fp-placing { cursor: crosshair; }
+
+.fp-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  user-select: none;
+  pointer-events: none; /* clicks fall through to .fp-pin or canvas */
+}
+
+/* ── Pins ─────────────────────────────────────────────────────── */
+.fp-pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  cursor: pointer;
+  z-index: 10;
+  background: none; border: none; padding: 0;
+  line-height: 0;
+  /* subtle entrance animation */
+  animation: pinPop .18s ease-out;
+}
+@keyframes pinPop {
+  from { transform: translate(-50%, calc(-100% - 8px)) scale(.7); opacity: 0; }
+  to   { transform: translate(-50%, -100%) scale(1);               opacity: 1; }
+}
+
+.fp-pin-marker {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 38px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 8px rgba(0,0,0,.35);
+  transition: transform .12s, box-shadow .12s;
+}
+.fp-pin:hover .fp-pin-marker,
+.fp-pin-active .fp-pin-marker {
+  transform: rotate(-45deg) scale(1.2);
+  box-shadow: 0 4px 14px rgba(0,0,0,.4);
+}
+.fp-pin-marker svg {
+  transform: rotate(45deg);
+  width: 14px; height: 14px;
+  stroke: #fff;
+}
+
+.fp-pin-keyed { background: #3b82f6; }
+.fp-pin-fob   { background: #f59e0b; }
+.fp-pin-both  { background: #16a34a; }
+
+/* Label shown on editor pins */
+.fp-pin-label-edit {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: .6875rem; font-weight: 600;
+  color: #fff;
+  background: rgba(30,42,59,.75);
+  padding: 1px 5px;
+  border-radius: 3px;
+  pointer-events: none;
+  line-height: 1.4;
+}
+
+.fp-pin-dragging { opacity: .7; z-index: 50; }
+
+/* ── Viewer popover ───────────────────────────────────────────── */
+.fp-popover {
+  position: absolute;
+  z-index: 100;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .9rem 1rem 1rem;
+  min-width: 210px; max-width: 280px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.16);
+  line-height: 1.4;
+}
+/* caret pointing down */
+.fp-popover::after {
+  content: '';
+  position: absolute;
+  bottom: -7px; left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 13px; height: 13px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.fp-popover-close {
+  position: absolute; top: 6px; right: 8px;
+  background: none; border: none;
+  font-size: 1.1rem; line-height: 1;
+  color: var(--text-muted); cursor: pointer;
+  padding: 0 2px;
+}
+.fp-popover-close:hover { color: var(--text); }
+.fp-popover-badge  { margin-bottom: .3rem; }
+.fp-popover-name   { font-weight: 700; font-size: .9375rem; margin-bottom: .25rem; padding-right: 18px; }
+.fp-popover-meta   { font-size: .8125rem; color: var(--text-muted); margin-bottom: .3rem; }
+.fp-popover-notes  { font-size: .8125rem; color: var(--text-muted); font-style: italic; margin-bottom: .6rem; }
+.fp-popover-link   { display: inline-block; font-size: .8125rem; }
+
+/* ── Editor layout ────────────────────────────────────────────── */
+.fp-editor-layout {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+.fp-editor-main {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.fp-editor-panel {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.fp-editor-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: .55rem .85rem;
+  font-size: .8125rem;
+  margin-bottom: -1px; /* merge with canvas border */
+  z-index: 1;
+  position: relative;
+}
+.fp-mode-label { color: var(--text-muted); }
+.fp-mode-label strong { color: var(--text); }
+.fp-canvas-hint {
+  font-size: .75rem; color: var(--text-muted); margin-top: .4rem;
+  text-align: center;
+}
+
+.fp-save-indicator {
+  font-size: .75rem; font-weight: 600;
+  min-width: 70px; text-align: right;
+  transition: opacity .3s;
+}
+.fp-save-ok  { color: var(--green); }
+.fp-save-err { color: var(--red); }
+
+/* ── Editor panel internals ───────────────────────────────────── */
+.fp-panel-section { padding: .85rem .9rem; }
+.fp-panel-divider { height: 1px; background: var(--border); }
+.fp-panel-heading {
+  font-size: .8rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--text-muted);
+  margin-bottom: .6rem;
+  display: flex; align-items: center; gap: .4rem;
+}
+.fp-panel-empty { font-size: .8125rem; color: var(--text-muted); }
+.fp-door-search {
+  width: 100%; margin-bottom: .5rem;
+  font-size: .8125rem;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: .3rem .55rem;
+  background: var(--bg); color: var(--text);
+}
+.fp-panel-door {
+  display: flex; align-items: center; gap: .45rem;
+  padding: .35rem .4rem;
+  border-radius: var(--radius-sm);
+  font-size: .8125rem;
+}
+.fp-panel-door-avail {
+  cursor: pointer;
+  transition: background .1s;
+}
+.fp-panel-door-avail:hover    { background: var(--gray-light); }
+.fp-panel-door-selected       { background: #dbeafe; }
+.fp-panel-door-placed { background: transparent; }
+
+.fp-panel-door-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fp-remove-btn {
+  background: none; border: none;
+  color: var(--text-muted); cursor: pointer;
+  font-size: 1rem; line-height: 1; padding: 0 2px;
+  flex-shrink: 0;
+}
+.fp-remove-btn:hover { color: var(--red); }
+
+/* ── Remove tooltip ───────────────────────────────────────────── */
+.fp-remove-tooltip {
+  position: absolute;
+  z-index: 200;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .7rem .9rem;
+  box-shadow: 0 6px 20px rgba(0,0,0,.15);
+  font-size: .8125rem; min-width: 180px;
+  pointer-events: auto;
+}
+.fp-remove-tooltip-name { font-weight: 600; }

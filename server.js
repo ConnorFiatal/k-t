@@ -22,7 +22,9 @@ const keysRoutes = require('./routes/keys');
 const doorsRoutes = require('./routes/doors');
 const fobProfilesRoutes = require('./routes/fobProfiles');
 const reportsRoutes = require('./routes/reports');
-const importRoutes  = require('./routes/import');
+const importRoutes      = require('./routes/import');
+const emailRoutes       = require('./routes/email');
+const floorPlansRoutes  = require('./routes/floorPlans');
 const { db } = require('./db');
 
 const app = express();
@@ -62,6 +64,7 @@ app.get('/', (req, res) => {
     doors:          db.prepare('SELECT COUNT(*) AS c FROM doors').get().c,
     keys:           db.prepare('SELECT COUNT(*) AS c FROM keys').get().c,
     keySystems:     db.prepare('SELECT COUNT(*) AS c FROM key_systems').get().c,
+    floorPlans:     db.prepare('SELECT COUNT(*) AS c FROM floor_plans').get().c,
     fobProfiles:    db.prepare('SELECT COUNT(*) AS c FROM fob_profiles').get().c,
   };
   const recentAudit = db.prepare('SELECT * FROM audit_log ORDER BY performed_at DESC LIMIT 10').all();
@@ -80,10 +83,12 @@ app.use('/doors', doorsRoutes);
 app.use('/fob-profiles', fobProfilesRoutes);
 app.use('/reports', reportsRoutes);
 app.use('/import', importRoutes);
+app.use('/floor-plans', floorPlansRoutes);
+app.use('/email', emailRoutes);
 
 app.use((req, res) => res.status(404).render('404', { title: 'Not Found' }));
 
 app.listen(PORT, () => {
-  console.log(`Credential Manager running at http://localhost:${PORT}`);
+  console.log(`KeyDog running at http://localhost:${PORT}`);
   console.log('Default login: admin / admin123 (change this immediately)');
 });
