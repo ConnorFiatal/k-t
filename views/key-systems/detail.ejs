@@ -1,0 +1,83 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <div>
+    <h1><%= system.name %></h1>
+    <p class="text-muted"><%= system.manufacturer || '' %><%= system.keyway ? ` · ${system.keyway}` : '' %></p>
+  </div>
+  <div class="btn-group">
+    <a href="/keys/new?system_id=<%= system.id %>" class="btn btn-primary">+ Add Key</a>
+    <a href="/key-systems/<%= system.id %>/edit" class="btn btn-outline">Edit System</a>
+    <% if (allKeys.length === 0) { %>
+      <form action="/key-systems/<%= system.id %>/delete" method="POST" style="display:inline">
+        <button type="submit" class="btn btn-danger-outline" onclick="return confirm('Delete this key system?')">Delete</button>
+      </form>
+    <% } %>
+    <a href="/reports/master-system-map?system_id=<%= system.id %>" class="btn btn-outline">Full Map Report</a>
+    <a href="/key-systems" class="btn btn-ghost">← Back</a>
+  </div>
+</div>
+
+<% if (system.description) { %>
+  <p class="text-muted" style="margin-bottom:1.5rem"><%= system.description %></p>
+<% } %>
+
+<!-- Topographical tree -->
+<div class="card">
+  <div class="card-header">
+    <h2>Key Hierarchy — Topographical Map</h2>
+    <span class="text-muted text-sm"><%= allKeys.length %> key<%= allKeys.length !== 1 ? 's' : '' %> in this system</span>
+  </div>
+  <% if (allKeys.length === 0) { %>
+    <p class="empty-state">No keys in this system yet. <a href="/keys/new?system_id=<%= system.id %>">Add the first key.</a></p>
+  <% } else { %>
+    <div class="key-tree-wrapper">
+      <%- treeHtml %>
+    </div>
+  <% } %>
+</div>
+
+<!-- Flat key list -->
+<div class="card">
+  <div class="card-header">
+    <h2>All Keys</h2>
+  </div>
+  <% if (allKeys.length === 0) { %>
+    <p class="empty-state-sm">No keys yet.</p>
+  <% } else { %>
+  <table class="table">
+    <thead>
+      <tr><th>Key #</th><th>Level</th><th>Parent Key</th><th>Bitting</th><th>Keyway</th><th>Key Blank</th><th>Doors</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% allKeys.forEach(k => { %>
+      <tr>
+        <td><a href="/keys/<%= k.id %>"><strong><%= k.key_number %></strong></a></td>
+        <td><span class="badge badge-level-<%= (k.level||'CHANGE').toLowerCase() %>"><%= k.level %></span></td>
+        <td class="text-muted"><%= k.parent_number || '—' %></td>
+        <td>
+          <% if (k.bitting) { %>
+            <span class="secret-value" data-secret="<%= k.bitting %>">••••••</span>
+            <button type="button" class="btn btn-sm btn-ghost toggle-secret" onclick="toggleSecret(this)">Show</button>
+          <% } else { %>
+            <span class="text-muted">—</span>
+          <% } %>
+        </td>
+        <td class="text-muted"><%= k.keyway || system.keyway || '—' %></td>
+        <td class="text-muted"><%= k.key_blank || '—' %></td>
+        <td><span class="count-badge"><%= k.door_count %></span></td>
+        <td class="text-right"><a href="/keys/<%= k.id %>" class="btn btn-sm btn-outline">View</a></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<script>
+function toggleSecret(btn) {
+  const span = btn.previousElementSibling;
+  if (btn.textContent === 'Show') { span.textContent = span.dataset.secret; btn.textContent = 'Hide'; }
+  else { span.textContent = '••••••'; btn.textContent = 'Show'; }
+}
+</script>
+<%- include('../partials/footer') %>

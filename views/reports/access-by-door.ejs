@@ -1,0 +1,98 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Report: Access by Door</h1>
+  <a href="/reports" class="btn btn-ghost">← Reports</a>
+</div>
+
+<div class="card" style="margin-bottom:1.5rem">
+  <form class="filter-bar" method="GET" action="/reports/access-by-door">
+    <select name="building">
+      <option value="">All Buildings</option>
+      <% buildings.forEach(b => { %>
+        <option value="<%= b %>" <%= filters.building === b ? 'selected' : '' %>><%= b %></option>
+      <% }) %>
+    </select>
+    <select name="type">
+      <option value="">All Types</option>
+      <option value="KEYED" <%= filters.type === 'KEYED' ? 'selected' : '' %>>Keyed</option>
+      <option value="FOB"   <%= filters.type === 'FOB'   ? 'selected' : '' %>>FOB</option>
+      <option value="BOTH"  <%= filters.type === 'BOTH'  ? 'selected' : '' %>>Both</option>
+    </select>
+    <button type="submit" class="btn btn-outline">Filter</button>
+    <a href="/reports/access-by-door" class="btn btn-ghost">Reset</a>
+  </form>
+</div>
+
+<p class="report-count"><%= doors.length %> door<%= doors.length !== 1 ? 's' : '' %></p>
+
+<% if (doors.length === 0) { %>
+  <div class="card"><p class="empty-state">No doors match the selected filters.</p></div>
+<% } else { %>
+  <% doors.forEach(d => { %>
+  <div class="card report-section">
+    <div class="card-header">
+      <h2>
+        <a href="/doors/<%= d.id %>"><%= d.name %></a>
+        <% if (d.door_number) { %><span class="text-muted text-sm" style="font-weight:400"> #<%= d.door_number %></span><% } %>
+        <span class="badge badge-access-<%= d.access_type.toLowerCase() %>"><%= d.access_type %></span>
+      </h2>
+      <span class="text-muted text-sm"><%= [d.building, d.floor, d.location].filter(Boolean).join(' · ') || '' %></span>
+    </div>
+    <div class="report-section-body">
+
+      <% if (d.access_type !== 'FOB') { %>
+      <div class="report-col">
+        <h4 class="report-col-label">Via Key — Staff with Access (<%= d.staffViaKey.length %>)</h4>
+        <% if (d.staffViaKey.length === 0) { %>
+          <p class="text-muted text-sm">No staff hold a keyring with a key to this door.</p>
+        <% } else { %>
+          <table class="table table-sm" style="margin:0">
+            <thead><tr><th>Staff Member</th><th>Key</th><th>Ring</th></tr></thead>
+            <tbody>
+              <% d.staffViaKey.forEach(r => { %>
+              <tr class="<%= r.status === 'terminated' ? 'row-terminated' : '' %>">
+                <td>
+                  <%= r.last_name %>, <%= r.first_name %>
+                  <% if (r.status === 'terminated') { %><span class="badge badge-red badge-sm">terminated</span><% } %>
+                </td>
+                <td class="text-muted"><%= r.key_number %> <span class="text-sm">(<%= r.system_name %>)</span></td>
+                <td class="text-muted"><a href="/keytrak/<%= r.keyring_id %>"><%= r.ring_number %></a></td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } %>
+      </div>
+      <% } %>
+
+      <% if (d.access_type !== 'KEYED') { %>
+      <div class="report-col">
+        <h4 class="report-col-label">Via FOB — Staff with Access (<%= d.staffViaFob.length %>)</h4>
+        <% if (d.staffViaFob.length === 0) { %>
+          <p class="text-muted text-sm">No staff hold a keyring with a FOB covering this door.</p>
+        <% } else { %>
+          <table class="table table-sm" style="margin:0">
+            <thead><tr><th>Staff Member</th><th>Profile</th><th>FOB S/N</th><th>Ring</th></tr></thead>
+            <tbody>
+              <% d.staffViaFob.forEach(r => { %>
+              <tr class="<%= r.status === 'terminated' ? 'row-terminated' : '' %>">
+                <td>
+                  <%= r.last_name %>, <%= r.first_name %>
+                  <% if (r.status === 'terminated') { %><span class="badge badge-red badge-sm">terminated</span><% } %>
+                </td>
+                <td class="text-muted"><%= r.profile_name %></td>
+                <td class="text-muted text-sm"><%= r.fob_serial || '—' %></td>
+                <td class="text-muted"><a href="/keytrak/<%= r.keyring_id %>"><%= r.ring_number %></a></td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } %>
+      </div>
+      <% } %>
+
+    </div>
+  </div>
+  <% }) %>
+<% } %>
+<%- include('../partials/footer') %>

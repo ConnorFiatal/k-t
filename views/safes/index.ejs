@@ -1,0 +1,30 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Safe Combinations</h1>
+  <a href="/safes/new" class="btn btn-primary">+ New Safe</a>
+</div>
+
+<div class="card">
+  <% if (safes.length === 0) { %>
+    <p class="empty-state">No safes configured yet. <a href="/safes/new">Add one.</a></p>
+  <% } else { %>
+  <table class="table">
+    <thead>
+      <tr><th>Name</th><th>Location</th><th>Staff with Access</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% safes.forEach(s => { %>
+      <tr>
+        <td><a href="/safes/<%= s.id %>"><strong><%= s.name %></strong></a></td>
+        <td class="text-muted"><%= s.location || '—' %></td>
+        <td><span class="count-badge"><%= s.access_count %></span></td>
+        <td class="text-right">
+          <a href="/safes/<%= s.id %>" class="btn btn-sm btn-outline">Manage Access</a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

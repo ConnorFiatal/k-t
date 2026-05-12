@@ -1,0 +1,82 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1><%= title %></h1>
+  <a href="/keys<%= key ? '/' + key.id : '' %>" class="btn btn-ghost">← Back</a>
+</div>
+
+<div class="card card-form">
+  <form action="<%= action %>" method="POST" id="key-form">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="key_system_id">Key System <span class="required">*</span></label>
+        <select id="key_system_id" name="key_system_id" required onchange="updateParentKeys(this.value)">
+          <option value="">— Select system —</option>
+          <% systems.forEach(s => { %>
+            <option value="<%= s.id %>" <%= (key ? key.key_system_id : preSystemId) == s.id ? 'selected' : '' %>><%= s.name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="key_number">Key Number <span class="required">*</span></label>
+        <input type="text" id="key_number" name="key_number" required value="<%= key ? key.key_number : '' %>" placeholder="e.g. GMK, MK-1, CK-101">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="level">Level <span class="required">*</span></label>
+        <select id="level" name="level" required>
+          <% LEVELS.forEach(l => { %>
+            <option value="<%= l %>" <%= (key ? key.level : '') === l ? 'selected' : '' %>><%= LEVEL_LABEL[l] %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="parent_key_id">Parent Key (key above this one)</label>
+        <select id="parent_key_id" name="parent_key_id">
+          <option value="">— None (root of hierarchy) —</option>
+          <% parentKeys.forEach(p => { %>
+            <option value="<%= p.id %>" <%= (key && key.parent_key_id === p.id) ? 'selected' : '' %>><%= p.key_number %> (<%= p.level %>)</option>
+          <% }) %>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="bitting">Bitting</label>
+        <input type="text" id="bitting" name="bitting" value="<%= key ? (key.bitting || '') : '' %>" placeholder="e.g. 3-5-2-7-4-1" autocomplete="off">
+        <p class="field-hint">Cut sequence stored securely. Use show/hide on detail page.</p>
+      </div>
+      <div class="form-group">
+        <label for="keyway">Keyway / Key Size</label>
+        <input type="text" id="keyway" name="keyway" value="<%= key ? (key.keyway || '') : '' %>" placeholder="e.g. Schlage C, Best A">
+        <p class="field-hint">Leave blank to inherit system keyway.</p>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="key_blank">Key Blank</label>
+      <input type="text" id="key_blank" name="key_blank" value="<%= key ? (key.key_blank || '') : '' %>" placeholder="e.g. Schlage 35-010C, Best 1A1C1">
+    </div>
+    <div class="form-group">
+      <label for="notes">Notes</label>
+      <textarea id="notes" name="notes" rows="3"><%= key ? (key.notes || '') : '' %></textarea>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary"><%= key ? 'Save Changes' : 'Create Key' %></button>
+      <a href="/keys<%= key ? '/' + key.id : '' %>" class="btn btn-ghost">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<script>
+// When system changes, reload parent key options via page reload (simple, no JS fetch needed)
+function updateParentKeys(systemId) {
+  if (!systemId) return;
+  const currentPath = window.location.pathname;
+  const action = document.getElementById('key-form').action;
+  // Only redirect if creating a new key (not editing) and system actually changes
+  <% if (!key) { %>
+  window.location.href = '/keys/new?system_id=' + systemId;
+  <% } %>
+}
+</script>
+<%- include('../partials/footer') %>

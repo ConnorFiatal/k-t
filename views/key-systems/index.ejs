@@ -1,0 +1,33 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Key Systems</h1>
+  <a href="/key-systems/new" class="btn btn-primary">+ New Key System</a>
+</div>
+
+<div class="card">
+  <% if (systems.length === 0) { %>
+    <p class="empty-state">No key systems configured yet. <a href="/key-systems/new">Add one.</a></p>
+  <% } else { %>
+  <table class="table">
+    <thead>
+      <tr><th>Name</th><th>Manufacturer</th><th>System Keyway</th><th>Keys</th><th>Description</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% systems.forEach(s => { %>
+      <tr>
+        <td><a href="/key-systems/<%= s.id %>"><strong><%= s.name %></strong></a></td>
+        <td class="text-muted"><%= s.manufacturer || '—' %></td>
+        <td class="text-muted"><%= s.keyway || '—' %></td>
+        <td><span class="count-badge"><%= s.key_count %></span></td>
+        <td class="text-muted text-sm"><%= s.description || '—' %></td>
+        <td class="text-right">
+          <a href="/key-systems/<%= s.id %>" class="btn btn-sm btn-outline">View Hierarchy</a>
+          <a href="/keys/new?system_id=<%= s.id %>" class="btn btn-sm btn-primary">+ Key</a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

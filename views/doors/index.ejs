@@ -1,0 +1,45 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Doors</h1>
+  <a href="/doors/new" class="btn btn-primary">+ New Door</a>
+</div>
+
+<div class="card">
+  <form class="filter-bar" method="GET" action="/doors">
+    <input type="text" name="q" placeholder="Search name, number, building…" value="<%= filters.q || '' %>">
+    <select name="type">
+      <option value="">All Types</option>
+      <option value="KEYED" <%= filters.type === 'KEYED' ? 'selected' : '' %>>Keyed</option>
+      <option value="FOB" <%= filters.type === 'FOB' ? 'selected' : '' %>>FOB</option>
+      <option value="BOTH" <%= filters.type === 'BOTH' ? 'selected' : '' %>>Both</option>
+    </select>
+    <button type="submit" class="btn btn-outline">Filter</button>
+    <a href="/doors" class="btn btn-ghost">Reset</a>
+  </form>
+
+  <% if (doors.length === 0) { %>
+    <p class="empty-state">No doors configured yet. <a href="/doors/new">Add one.</a></p>
+  <% } else { %>
+  <table class="table">
+    <thead>
+      <tr><th>Name</th><th>#</th><th>Building</th><th>Floor</th><th>Location</th><th>Type</th><th>Keys</th><th>FOB Profiles</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% doors.forEach(d => { %>
+      <tr>
+        <td><a href="/doors/<%= d.id %>"><strong><%= d.name %></strong></a></td>
+        <td class="text-muted"><%= d.door_number || '—' %></td>
+        <td class="text-muted"><%= d.building || '—' %></td>
+        <td class="text-muted"><%= d.floor || '—' %></td>
+        <td class="text-muted text-sm"><%= d.location || '—' %></td>
+        <td><span class="badge badge-access-<%= d.access_type.toLowerCase() %>"><%= d.access_type %></span></td>
+        <td><span class="count-badge"><%= d.key_count %></span></td>
+        <td><span class="count-badge"><%= d.fob_profile_count %></span></td>
+        <td class="text-right"><a href="/doors/<%= d.id %>" class="btn btn-sm btn-outline">View</a></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

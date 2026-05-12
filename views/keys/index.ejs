@@ -1,0 +1,66 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Keys</h1>
+  <a href="/keys/new" class="btn btn-primary">+ New Key</a>
+</div>
+
+<div class="card">
+  <form class="filter-bar" method="GET" action="/keys">
+    <input type="text" name="q" placeholder="Search key #, bitting, keyway…" value="<%= filters.q || '' %>">
+    <select name="system_id">
+      <option value="">All Systems</option>
+      <% systems.forEach(s => { %>
+        <option value="<%= s.id %>" <%= filters.system_id == s.id ? 'selected' : '' %>><%= s.name %></option>
+      <% }) %>
+    </select>
+    <select name="level">
+      <option value="">All Levels</option>
+      <% LEVELS.forEach(l => { %>
+        <option value="<%= l %>" <%= filters.level === l ? 'selected' : '' %>><%= LEVEL_LABEL[l] %></option>
+      <% }) %>
+    </select>
+    <button type="submit" class="btn btn-outline">Filter</button>
+    <a href="/keys" class="btn btn-ghost">Reset</a>
+  </form>
+
+  <% if (keys.length === 0) { %>
+    <p class="empty-state">No keys found.</p>
+  <% } else { %>
+  <table class="table">
+    <thead>
+      <tr><th>Key #</th><th>System</th><th>Level</th><th>Parent</th><th>Bitting</th><th>Keyway</th><th>Key Blank</th><th>Doors</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% keys.forEach(k => { %>
+      <tr>
+        <td><a href="/keys/<%= k.id %>"><strong><%= k.key_number %></strong></a></td>
+        <td><a href="/key-systems/<%= k.key_system_id %>" class="text-muted"><%= k.system_name %></a></td>
+        <td><span class="badge badge-level-<%= (k.level||'CHANGE').toLowerCase() %>"><%= LEVEL_LABEL[k.level] || k.level %></span></td>
+        <td class="text-muted"><%= k.parent_number || '—' %></td>
+        <td>
+          <% if (k.bitting) { %>
+            <span class="secret-value" data-secret="<%= k.bitting %>">••••••</span>
+            <button type="button" class="btn btn-sm btn-ghost toggle-secret" onclick="toggleSecret(this)">Show</button>
+          <% } else { %>
+            <span class="text-muted">—</span>
+          <% } %>
+        </td>
+        <td class="text-muted"><%= k.keyway || '—' %></td>
+        <td class="text-muted"><%= k.key_blank || '—' %></td>
+        <td><span class="count-badge"><%= k.door_count %></span></td>
+        <td class="text-right"><a href="/keys/<%= k.id %>" class="btn btn-sm btn-outline">View</a></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<script>
+function toggleSecret(btn) {
+  const span = btn.previousElementSibling;
+  if (btn.textContent === 'Show') { span.textContent = span.dataset.secret; btn.textContent = 'Hide'; }
+  else { span.textContent = '••••••'; btn.textContent = 'Show'; }
+}
+</script>
+<%- include('../partials/footer') %>

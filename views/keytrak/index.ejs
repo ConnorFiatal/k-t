@@ -1,0 +1,33 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>KeyTrak Keyrings</h1>
+  <a href="/keytrak/new" class="btn btn-primary">+ New Keyring</a>
+</div>
+
+<div class="card">
+  <% if (keyrings.length === 0) { %>
+    <p class="empty-state">No keyrings configured yet. <a href="/keytrak/new">Add one.</a></p>
+  <% } else { %>
+  <table class="table">
+    <thead>
+      <tr><th>Ring #</th><th>Description</th><th>Location</th><th>Auth. Staff</th><th>Keys</th><th>FOBs</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% keyrings.forEach(k => { %>
+      <tr>
+        <td><a href="/keytrak/<%= k.id %>"><strong><%= k.ring_number %></strong></a></td>
+        <td class="text-muted"><%= k.description || '—' %></td>
+        <td class="text-muted"><%= k.location || '—' %></td>
+        <td><span class="count-badge"><%= k.auth_count %></span></td>
+        <td><span class="count-badge"><%= k.key_count %></span></td>
+        <td><span class="count-badge"><%= k.fob_count %></span></td>
+        <td class="text-right">
+          <a href="/keytrak/<%= k.id %>" class="btn btn-sm btn-outline">Manage</a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

@@ -1,0 +1,79 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Report: Keyring Inventory</h1>
+  <a href="/reports" class="btn btn-ghost">← Reports</a>
+</div>
+
+<p class="report-count"><%= keyrings.length %> keyring<%= keyrings.length !== 1 ? 's' : '' %></p>
+
+<% if (keyrings.length === 0) { %>
+  <div class="card"><p class="empty-state">No keyrings configured.</p></div>
+<% } else { %>
+  <% keyrings.forEach(ring => { %>
+  <div class="card report-section">
+    <div class="card-header">
+      <h2>
+        <a href="/keytrak/<%= ring.id %>">Ring <%= ring.ring_number %></a>
+        <% if (ring.description) { %><span class="text-muted text-sm" style="font-weight:400"> — <%= ring.description %></span><% } %>
+      </h2>
+      <span class="text-muted text-sm"><%= ring.location || '' %></span>
+    </div>
+    <div class="report-section-body">
+
+      <div class="report-col">
+        <h4 class="report-col-label">Authorized Staff (<%= ring.staff.length %>)</h4>
+        <% if (ring.staff.length === 0) { %>
+          <p class="text-muted text-sm">None</p>
+        <% } else { %>
+          <ul class="report-list">
+            <% ring.staff.forEach(s => { %>
+              <li class="<%= s.status === 'terminated' ? 'text-muted' : '' %>">
+                <%= s.last_name %>, <%= s.first_name %>
+                <% if (s.department) { %><span class="text-muted text-sm"> · <%= s.department %></span><% } %>
+                <% if (s.status === 'terminated') { %><span class="badge badge-red badge-sm">terminated</span><% } %>
+              </li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </div>
+
+      <div class="report-col">
+        <h4 class="report-col-label">Physical Keys (<%= ring.keys.length %>)</h4>
+        <% if (ring.keys.length === 0) { %>
+          <p class="text-muted text-sm">None</p>
+        <% } else { %>
+          <ul class="report-list">
+            <% ring.keys.forEach(k => { %>
+              <li>
+                <span class="badge badge-level-<%= (k.level||'CHANGE').toLowerCase() %>"><%= k.level %></span>
+                <strong><%= k.key_number %></strong>
+                <span class="text-muted text-sm"> — <%= k.system_name %></span>
+                <% if (k.keyway) { %><span class="text-muted text-sm"> · <%= k.keyway %></span><% } %>
+              </li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </div>
+
+      <div class="report-col">
+        <h4 class="report-col-label">FOB Credentials (<%= ring.fobs.length %>)</h4>
+        <% if (ring.fobs.length === 0) { %>
+          <p class="text-muted text-sm">None</p>
+        <% } else { %>
+          <ul class="report-list">
+            <% ring.fobs.forEach(f => { %>
+              <li>
+                <strong><%= f.profile_name %></strong>
+                <span class="text-muted text-sm">· <%= f.door_count %> door<%= f.door_count !== 1 ? 's' : '' %></span>
+                <% if (f.fob_serial) { %><span class="text-muted text-sm"> · S/N: <%= f.fob_serial %></span><% } %>
+              </li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </div>
+
+    </div>
+  </div>
+  <% }) %>
+<% } %>
+<%- include('../partials/footer') %>

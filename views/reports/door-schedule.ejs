@@ -1,0 +1,63 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Report: Door Schedule</h1>
+  <a href="/reports" class="btn btn-ghost">← Reports</a>
+</div>
+
+<div class="card">
+  <form class="filter-bar" method="GET" action="/reports/door-schedule">
+    <select name="type">
+      <option value="">All Types</option>
+      <option value="KEYED" <%= filters.type === 'KEYED' ? 'selected' : '' %>>Keyed Only</option>
+      <option value="FOB"   <%= filters.type === 'FOB'   ? 'selected' : '' %>>FOB Only</option>
+      <option value="BOTH"  <%= filters.type === 'BOTH'  ? 'selected' : '' %>>Both</option>
+    </select>
+    <button type="submit" class="btn btn-outline">Filter</button>
+    <a href="/reports/door-schedule" class="btn btn-ghost">Reset</a>
+  </form>
+
+  <p class="report-count"><%= doors.length %> door<%= doors.length !== 1 ? 's' : '' %></p>
+
+  <% if (doors.length === 0) { %>
+    <p class="empty-state">No doors found.</p>
+  <% } else { %>
+  <table class="table">
+    <thead>
+      <tr><th>Door</th><th>#</th><th>Building / Floor</th><th>Type</th><th>Keys</th><th>FOB Profiles</th></tr>
+    </thead>
+    <tbody>
+      <% doors.forEach(d => { %>
+      <tr>
+        <td><a href="/doors/<%= d.id %>"><strong><%= d.name %></strong></a></td>
+        <td class="text-muted"><%= d.door_number || '—' %></td>
+        <td class="text-muted"><%= [d.building, d.floor].filter(Boolean).join(', ') || '—' %></td>
+        <td><span class="badge badge-access-<%= d.access_type.toLowerCase() %>"><%= d.access_type %></span></td>
+        <td>
+          <% if (d.keys.length === 0) { %>
+            <span class="text-muted">None</span>
+          <% } else { %>
+            <ul class="inline-list">
+              <% d.keys.forEach(k => { %>
+                <li><span class="badge badge-level-<%= (k.level||'CHANGE').toLowerCase() %>"><%= k.level %></span> <%= k.key_number %> <span class="text-muted text-sm">(<%= k.system_name %>)</span></li>
+              <% }) %>
+            </ul>
+          <% } %>
+        </td>
+        <td>
+          <% if (d.fobProfiles.length === 0) { %>
+            <span class="text-muted">None</span>
+          <% } else { %>
+            <ul class="inline-list">
+              <% d.fobProfiles.forEach(p => { %>
+                <li><%= p.name %></li>
+              <% }) %>
+            </ul>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

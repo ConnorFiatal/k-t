@@ -1,0 +1,55 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Staff</h1>
+  <a href="/staff/new" class="btn btn-primary">+ New Staff Member</a>
+</div>
+
+<div class="card">
+  <form class="filter-bar" method="GET" action="/staff">
+    <input type="text" name="q" placeholder="Search name, ID, department…" value="<%= q %>">
+    <select name="status">
+      <option value="active" <%= status === 'active' ? 'selected' : '' %>>Active</option>
+      <option value="terminated" <%= status === 'terminated' ? 'selected' : '' %>>Terminated</option>
+      <option value="all" <%= status === 'all' ? 'selected' : '' %>>All</option>
+    </select>
+    <button type="submit" class="btn btn-outline">Filter</button>
+    <a href="/staff" class="btn btn-ghost">Reset</a>
+  </form>
+
+  <% if (staff.length === 0) { %>
+    <p class="empty-state">No staff members found.</p>
+  <% } else { %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Employee ID</th>
+        <th>Department</th>
+        <th>Title</th>
+        <th>Status</th>
+        <th>Start Date</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% staff.forEach(s => { %>
+      <tr>
+        <td><a href="/staff/<%= s.id %>"><strong><%= s.last_name %>, <%= s.first_name %></strong></a></td>
+        <td class="text-muted"><%= s.employee_id || '—' %></td>
+        <td><%= s.department || '—' %></td>
+        <td><%= s.title || '—' %></td>
+        <td><span class="badge badge-<%= s.status === 'active' ? 'green' : 'red' %>"><%= s.status %></span></td>
+        <td class="text-muted"><%= s.start_date || '—' %></td>
+        <td class="text-right">
+          <a href="/staff/<%= s.id %>" class="btn btn-sm btn-outline">View</a>
+          <% if (s.status === 'active') { %>
+            <a href="/staff/<%= s.id %>/termination" class="btn btn-sm btn-danger-outline">Termination Checklist</a>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

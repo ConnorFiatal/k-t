@@ -1,0 +1,135 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <div>
+    <h1>Key <%= key.key_number %>
+      <span class="badge badge-level-<%= (key.level||'CHANGE').toLowerCase() %> badge-lg"><%= LEVEL_LABEL[key.level] || key.level %></span>
+    </h1>
+    <p class="text-muted"><a href="/key-systems/<%= key.key_system_id %>"><%= key.system_name %></a><%= key.parent_id ? ` · Parent: <a href="/keys/${key.parent_id}">${key.parent_number}</a>` : '' %></p>
+  </div>
+  <div class="btn-group">
+    <a href="/keys/<%= key.id %>/edit" class="btn btn-outline">Edit</a>
+    <% if (onRings.length === 0 && childKeys.length === 0) { %>
+      <form action="/keys/<%= key.id %>/delete" method="POST" style="display:inline">
+        <button type="submit" class="btn btn-danger-outline" onclick="return confirm('Delete key <%= key.key_number %>?')">Delete</button>
+      </form>
+    <% } %>
+    <a href="/key-systems/<%= key.key_system_id %>" class="btn btn-ghost">← System</a>
+  </div>
+</div>
+
+<div class="detail-grid">
+  <div>
+    <div class="card">
+      <div class="card-header"><h2>Key Details</h2></div>
+      <table class="info-table">
+        <tr><th>System</th><td><a href="/key-systems/<%= key.key_system_id %>"><%= key.system_name %></a></td></tr>
+        <tr><th>Level</th><td><span class="badge badge-level-<%= (key.level||'CHANGE').toLowerCase() %>"><%= LEVEL_LABEL[key.level] || key.level %></span></td></tr>
+        <tr><th>Parent Key</th><td><%= key.parent_id ? `<a href="/keys/${key.parent_id}">${key.parent_number}</a>` : '<span class="text-muted">Root key</span>' %></td></tr>
+        <tr>
+          <th>Bitting</th>
+          <td>
+            <% if (key.bitting) { %>
+              <span class="secret-value" data-secret="<%= key.bitting %>">••••••</span>
+              <button type="button" class="btn btn-sm btn-ghost toggle-secret" onclick="toggleSecret(this)">Show</button>
+            <% } else { %>
+              <span class="text-muted">Not recorded</span>
+            <% } %>
+          </td>
+        </tr>
+        <tr><th>Keyway</th><td><%= key.keyway || key.system_keyway || '—' %><% if (!key.keyway && key.system_keyway) { %> <span class="text-muted text-sm">(from system)</span><% } %></td></tr>
+        <tr><th>Key Blank</th><td><%= key.key_blank || '—' %></td></tr>
+        <tr><th>Added</th><td><%= key.created_at %></td></tr>
+        <% if (key.notes) { %><tr><th>Notes</th><td><%= key.notes %></td></tr><% } %>
+      </table>
+    </div>
+
+    <% if (childKeys.length > 0) { %>
+    <div class="card">
+      <div class="card-header"><h2>Subordinate Keys <span class="count-badge"><%= childKeys.length %></span></h2></div>
+      <table class="table table-sm">
+        <thead><tr><th>Key #</th><th>Level</th><th>Bitting</th></tr></thead>
+        <tbody>
+          <% childKeys.forEach(c => { %>
+          <tr>
+            <td><a href="/keys/<%= c.id %>"><%= c.key_number %></a></td>
+            <td><span class="badge badge-level-<%= (c.level||'CHANGE').toLowerCase() %>"><%= c.level %></span></td>
+            <td class="text-muted"><%= c.bitting || '—' %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+
+    <% if (onRings.length > 0) { %>
+    <div class="card">
+      <div class="card-header"><h2>On Keyrings <span class="count-badge"><%= onRings.length %></span></h2></div>
+      <table class="table table-sm">
+        <thead><tr><th>Ring #</th><th>Description</th><th>Assigned</th></tr></thead>
+        <tbody>
+          <% onRings.forEach(r => { %>
+          <tr>
+            <td><a href="/keytrak/<%= r.keyring_id %>"><%= r.ring_number %></a></td>
+            <td class="text-muted"><%= r.description || '—' %></td>
+            <td class="text-muted text-sm"><%= r.assigned_at %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Doors This Key Opens <span class="count-badge"><%= doors.length %></span></h2>
+    </div>
+
+    <% if (eligibleDoors.length > 0) { %>
+    <form action="/keys/<%= key.id %>/doors/add" method="POST" class="grant-form">
+      <select name="door_id" required>
+        <option value="">— Select door —</option>
+        <% eligibleDoors.forEach(d => { %>
+          <option value="<%= d.id %>"><%= d.name %><%= d.door_number ? ` (${d.door_number})` : '' %><%= d.building ? ` — ${d.building}` : '' %></option>
+        <% }) %>
+      </select>
+      <button type="submit" class="btn btn-primary">Add Door</button>
+    </form>
+    <% } else if (doors.length > 0) { %>
+      <p class="empty-state-sm text-muted">All keyed/both doors are assigned.</p>
+    <% } %>
+
+    <% if (doors.length === 0) { %>
+      <p class="empty-state-sm">No doors assigned yet.</p>
+    <% } else { %>
+    <table class="table">
+      <thead><tr><th>Door</th><th>#</th><th>Building</th><th>Floor</th><th>Type</th><th></th></tr></thead>
+      <tbody>
+        <% doors.forEach(d => { %>
+        <tr>
+          <td><a href="/doors/<%= d.id %>"><%= d.name %></a></td>
+          <td class="text-muted"><%= d.door_number || '—' %></td>
+          <td class="text-muted"><%= d.building || '—' %></td>
+          <td class="text-muted"><%= d.floor || '—' %></td>
+          <td><span class="badge badge-access-<%= d.access_type.toLowerCase() %>"><%= d.access_type %></span></td>
+          <td class="text-right">
+            <form action="/keys/<%= key.id %>/doors/<%= d.id %>/remove" method="POST" style="display:inline">
+              <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Remove this door?')">Remove</button>
+            </form>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  </div>
+</div>
+
+<script>
+function toggleSecret(btn) {
+  const span = btn.previousElementSibling;
+  if (btn.textContent === 'Show') { span.textContent = span.dataset.secret; btn.textContent = 'Hide'; }
+  else { span.textContent = '••••••'; btn.textContent = 'Show'; }
+}
+</script>
+<%- include('../partials/footer') %>

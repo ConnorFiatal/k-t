@@ -1,0 +1,51 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Report: Master System Map</h1>
+  <a href="/reports" class="btn btn-ghost">← Reports</a>
+</div>
+
+<div class="card" style="margin-bottom:1.5rem">
+  <form class="filter-bar" method="GET" action="/reports/master-system-map">
+    <select name="system_id">
+      <option value="">All Systems</option>
+      <% systems.forEach(s => { %>
+        <option value="<%= s.id %>" <%= filters.system_id == s.id ? 'selected' : '' %>><%= s.name %></option>
+      <% }) %>
+    </select>
+    <button type="submit" class="btn btn-outline">Filter</button>
+    <a href="/reports/master-system-map" class="btn btn-ghost">Reset</a>
+  </form>
+</div>
+
+<div class="tree-legend">
+  <strong>Legend:</strong>
+  <span class="badge badge-level-gmk">Grand Master</span>
+  <span class="badge badge-level-mk">Master</span>
+  <span class="badge badge-level-sub_master">Sub-Master</span>
+  <span class="badge badge-level-change">Change</span>
+</div>
+
+<% if (trees.length === 0) { %>
+  <div class="card"><p class="empty-state">No key systems with keys found.</p></div>
+<% } else { %>
+  <% trees.forEach(t => { %>
+  <div class="card">
+    <div class="card-header">
+      <h2>
+        <a href="/key-systems/<%= t.system.id %>"><%= t.system.name %></a>
+        <% if (t.system.manufacturer) { %><span class="text-muted text-sm" style="font-weight:400"> · <%= t.system.manufacturer %></span><% } %>
+        <% if (t.system.keyway) { %><span class="text-muted text-sm" style="font-weight:400"> · <%= t.system.keyway %></span><% } %>
+      </h2>
+      <span class="count-badge"><%= t.keyCount %> key<%= t.keyCount !== 1 ? 's' : '' %></span>
+    </div>
+    <% if (t.keyCount === 0) { %>
+      <p class="empty-state-sm">No keys in this system.</p>
+    <% } else { %>
+      <div class="key-tree-wrapper">
+        <%- t.treeHtml %>
+      </div>
+    <% } %>
+  </div>
+  <% }) %>
+<% } %>
+<%- include('../partials/footer') %>

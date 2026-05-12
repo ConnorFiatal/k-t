@@ -1,0 +1,92 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Report: Staff Access Summary</h1>
+  <a href="/reports" class="btn btn-ghost">← Reports</a>
+</div>
+
+<div class="card" style="margin-bottom:1.5rem">
+  <form class="filter-bar" method="GET" action="/reports/staff-access">
+    <select name="staff_id">
+      <option value="">All Staff</option>
+      <% allStaff.forEach(s => { %>
+        <option value="<%= s.id %>" <%= filters.staff_id == s.id ? 'selected' : '' %>><%= s.last_name %>, <%= s.first_name %> <%= s.status === 'terminated' ? '(terminated)' : '' %></option>
+      <% }) %>
+    </select>
+    <select name="status">
+      <option value="active" <%= (!filters.staff_id && filters.status !== 'terminated' && filters.status !== 'all') ? 'selected' : '' %>>Active Only</option>
+      <option value="terminated" <%= filters.status === 'terminated' ? 'selected' : '' %>>Terminated Only</option>
+      <option value="all" <%= filters.status === 'all' ? 'selected' : '' %>>All Status</option>
+    </select>
+    <button type="submit" class="btn btn-outline">Filter</button>
+    <a href="/reports/staff-access" class="btn btn-ghost">Reset</a>
+  </form>
+</div>
+
+<p class="report-count"><%= staff.length %> staff member<%= staff.length !== 1 ? 's' : '' %></p>
+
+<% if (staff.length === 0) { %>
+  <div class="card"><p class="empty-state">No staff match the selected filters.</p></div>
+<% } else { %>
+  <% staff.forEach(s => { %>
+  <div class="card report-section">
+    <div class="card-header">
+      <h2>
+        <a href="/staff/<%= s.id %>"><%= s.last_name %>, <%= s.first_name %></a>
+        <span class="badge badge-<%= s.status === 'active' ? 'green' : 'red' %>"><%= s.status %></span>
+      </h2>
+      <span class="text-muted text-sm"><%= s.title || '' %><%= s.department ? ` · ${s.department}` : '' %></span>
+    </div>
+    <div class="report-section-body">
+
+      <div class="report-col">
+        <h4 class="report-col-label">KeyTrak Keyrings (<%= s.keyrings.length %>)</h4>
+        <% if (s.keyrings.length === 0) { %>
+          <p class="text-muted text-sm">None</p>
+        <% } else { %>
+          <ul class="report-list">
+            <% s.keyrings.forEach(r => { %>
+              <li>
+                <a href="/keytrak/<%= r.id %>">Ring <%= r.ring_number %></a>
+                <% if (r.description) { %><span class="text-muted text-sm"> — <%= r.description %></span><% } %>
+                <span class="text-muted text-sm"> (<%= r.key_count %> key<%= r.key_count !== 1 ? 's' : '' %>, <%= r.fob_count %> FOB)</span>
+              </li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </div>
+
+      <div class="report-col">
+        <h4 class="report-col-label">Safe Access (<%= s.safeAccess.length %>)</h4>
+        <% if (s.safeAccess.length === 0) { %>
+          <p class="text-muted text-sm">None</p>
+        <% } else { %>
+          <ul class="report-list">
+            <% s.safeAccess.forEach(sa => { %>
+              <li><%= sa.name %><% if (sa.location) { %><span class="text-muted text-sm"> · <%= sa.location %></span><% } %></li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </div>
+
+      <div class="report-col">
+        <h4 class="report-col-label">System Accounts (<%= s.sysAccess.length %>)</h4>
+        <% if (s.sysAccess.length === 0) { %>
+          <p class="text-muted text-sm">None</p>
+        <% } else { %>
+          <ul class="report-list">
+            <% s.sysAccess.forEach(a => { %>
+              <li>
+                <%= a.system_name %>
+                <% if (a.category) { %><span class="badge badge-outline badge-sm"><%= a.category %></span><% } %>
+                <span class="text-muted text-sm"> · <%= a.account_username %></span>
+              </li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </div>
+
+    </div>
+  </div>
+  <% }) %>
+<% } %>
+<%- include('../partials/footer') %>

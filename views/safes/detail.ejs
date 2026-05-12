@@ -1,0 +1,89 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <div>
+    <h1><%= safe.name %></h1>
+    <p class="text-muted"><%= safe.location || 'No location specified' %></p>
+  </div>
+  <div class="btn-group">
+    <a href="/safes/<%= safe.id %>/edit" class="btn btn-outline">Edit</a>
+    <a href="/safes" class="btn btn-ghost">← Back</a>
+  </div>
+</div>
+
+<div class="detail-grid">
+  <div class="card">
+    <div class="card-header"><h2>Safe Details</h2></div>
+    <table class="info-table">
+      <tr><th>Name</th><td><%= safe.name %></td></tr>
+      <tr><th>Location</th><td><%= safe.location || '—' %></td></tr>
+      <tr>
+        <th>Combination</th>
+        <td>
+          <span class="secret-value" data-secret="<%= safe.combination %>">••••••••</span>
+          <button type="button" class="btn btn-sm btn-ghost toggle-secret" onclick="toggleSecret(this)">Show</button>
+        </td>
+      </tr>
+      <tr><th>Added</th><td><%= safe.created_at %></td></tr>
+      <% if (safe.notes) { %><tr><th>Notes</th><td><%= safe.notes %></td></tr><% } %>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Staff with Access <span class="count-badge"><%= access.length %></span></h2>
+    </div>
+
+    <% if (eligibleStaff.length > 0) { %>
+    <form action="/safes/<%= safe.id %>/grant" method="POST" class="grant-form">
+      <select name="staff_id" required>
+        <option value="">— Select staff member —</option>
+        <% eligibleStaff.forEach(s => { %>
+          <option value="<%= s.id %>"><%= s.last_name %>, <%= s.first_name %><%= s.department ? ` (${s.department})` : '' %></option>
+        <% }) %>
+      </select>
+      <button type="submit" class="btn btn-primary">Grant Access</button>
+    </form>
+    <% } else { %>
+      <p class="empty-state-sm text-muted">All active staff already have access.</p>
+    <% } %>
+
+    <% if (access.length === 0) { %>
+      <p class="empty-state-sm">No staff have access yet.</p>
+    <% } else { %>
+    <table class="table">
+      <thead><tr><th>Name</th><th>Department</th><th>Granted</th><th>By</th><th></th></tr></thead>
+      <tbody>
+        <% access.forEach(a => { %>
+        <tr class="<%= a.status === 'terminated' ? 'row-terminated' : '' %>">
+          <td><a href="/staff/<%= a.staff_id %>"><%= a.last_name %>, <%= a.first_name %></a>
+            <% if (a.status === 'terminated') { %><span class="badge badge-red badge-sm">terminated</span><% } %>
+          </td>
+          <td class="text-muted"><%= a.department || '—' %></td>
+          <td class="text-muted text-sm"><%= a.granted_at %></td>
+          <td class="text-muted"><%= a.granted_by %></td>
+          <td class="text-right">
+            <form action="/safes/<%= safe.id %>/revoke/<%= a.staff_id %>" method="POST" style="display:inline">
+              <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Revoke access for <%= a.first_name %> <%= a.last_name %>?')">Revoke</button>
+            </form>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  </div>
+</div>
+
+<script>
+function toggleSecret(btn) {
+  const span = btn.previousElementSibling;
+  if (btn.textContent === 'Show') {
+    span.textContent = span.dataset.secret;
+    btn.textContent = 'Hide';
+  } else {
+    span.textContent = '••••••••';
+    btn.textContent = 'Show';
+  }
+}
+</script>
+<%- include('../partials/footer') %>

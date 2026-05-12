@@ -1,0 +1,43 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>System Accounts</h1>
+  <a href="/system-accounts/new" class="btn btn-primary">+ New Account</a>
+</div>
+
+<div class="card">
+  <form class="filter-bar" method="GET" action="/system-accounts">
+    <select name="category">
+      <option value="">All Categories</option>
+      <% categories.forEach(c => { %>
+        <option value="<%= c %>" <%= selectedCategory === c ? 'selected' : '' %>><%= c %></option>
+      <% }) %>
+    </select>
+    <button type="submit" class="btn btn-outline">Filter</button>
+    <a href="/system-accounts" class="btn btn-ghost">Reset</a>
+  </form>
+
+  <% if (accounts.length === 0) { %>
+    <p class="empty-state">No system accounts yet. <a href="/system-accounts/new">Add one.</a></p>
+  <% } else { %>
+  <table class="table">
+    <thead>
+      <tr><th>System</th><th>Username</th><th>Category</th><th>URL</th><th>Staff with Access</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% accounts.forEach(a => { %>
+      <tr>
+        <td><a href="/system-accounts/<%= a.id %>"><strong><%= a.system_name %></strong></a></td>
+        <td class="text-muted"><%= a.account_username %></td>
+        <td><%= a.category ? `<span class="badge badge-outline">${a.category}</span>` : '—' %></td>
+        <td class="text-muted text-sm"><%= a.url ? `<a href="${a.url}" target="_blank" rel="noopener">${a.url.length > 40 ? a.url.substring(0,40)+'…' : a.url}</a>` : '—' %></td>
+        <td><span class="count-badge"><%= a.access_count %></span></td>
+        <td class="text-right">
+          <a href="/system-accounts/<%= a.id %>" class="btn btn-sm btn-outline">Manage Access</a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

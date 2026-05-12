@@ -1,0 +1,34 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Admin Users</h1>
+  <a href="/admin/users/new" class="btn btn-primary">+ New Admin User</a>
+</div>
+
+<div class="card card-form">
+  <table class="table">
+    <thead>
+      <tr><th>Username</th><th>Created</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% users.forEach(u => { %>
+      <tr>
+        <td>
+          <strong><%= u.username %></strong>
+          <% if (u.id === user.id) { %><span class="badge badge-blue badge-sm">you</span><% } %>
+        </td>
+        <td class="text-muted"><%= u.created_at %></td>
+        <td class="text-right">
+          <a href="/admin/users/<%= u.id %>/change-password" class="btn btn-sm btn-outline">Change Password</a>
+          <% if (u.id !== user.id) { %>
+            <form action="/admin/users/<%= u.id %>/delete" method="POST" style="display:inline">
+              <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete admin user &quot;<%= u.username %>&quot;? This cannot be undone.')">Delete</button>
+            </form>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <p class="field-hint" style="padding: 1rem 1.5rem 0;">Admin users have full read/write access to all data. Sessions expire after 8 hours of inactivity.</p>
+</div>
+<%- include('../partials/footer') %>

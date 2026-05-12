@@ -1,0 +1,104 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <div>
+    <h1><%= door.name %>
+      <span class="badge badge-access-<%= door.access_type.toLowerCase() %> badge-lg"><%= door.access_type %></span>
+    </h1>
+    <p class="text-muted">
+      <% if (door.door_number) { %>#<%= door.door_number %> · <% } %>
+      <% if (door.building) { %><%= door.building %><% if (door.floor) { %>, <%= door.floor %><% } %><% } %>
+      <% if (door.location) { %> · <%= door.location %><% } %>
+    </p>
+  </div>
+  <div class="btn-group">
+    <a href="/doors/<%= door.id %>/edit" class="btn btn-outline">Edit</a>
+    <% if (keys.length === 0 && fobProfiles.length === 0) { %>
+      <form action="/doors/<%= door.id %>/delete" method="POST" style="display:inline">
+        <button type="submit" class="btn btn-danger-outline" onclick="return confirm('Delete this door?')">Delete</button>
+      </form>
+    <% } %>
+    <a href="/doors" class="btn btn-ghost">← Back</a>
+  </div>
+</div>
+
+<div class="detail-grid">
+  <div class="card">
+    <div class="card-header"><h2>Door Details</h2></div>
+    <table class="info-table">
+      <tr><th>Name</th><td><%= door.name %></td></tr>
+      <tr><th>Door #</th><td><%= door.door_number || '—' %></td></tr>
+      <tr><th>Access Type</th><td><span class="badge badge-access-<%= door.access_type.toLowerCase() %>"><%= door.access_type %></span></td></tr>
+      <tr><th>Building</th><td><%= door.building || '—' %></td></tr>
+      <tr><th>Floor</th><td><%= door.floor || '—' %></td></tr>
+      <tr><th>Location</th><td><%= door.location || '—' %></td></tr>
+      <tr><th>Added</th><td><%= door.created_at %></td></tr>
+      <% if (door.notes) { %><tr><th>Notes</th><td><%= door.notes %></td></tr><% } %>
+    </table>
+  </div>
+
+  <div>
+    <% if (door.access_type !== 'FOB') { %>
+    <div class="card">
+      <div class="card-header">
+        <h2>Keys That Open This Door <span class="count-badge"><%= keys.length %></span></h2>
+      </div>
+      <% if (keys.length === 0) { %>
+        <p class="empty-state-sm">No keys assigned. <a href="/keys">Assign from a key's detail page.</a></p>
+      <% } else { %>
+      <table class="table table-sm">
+        <thead><tr><th>Key #</th><th>System</th><th>Level</th><th>Bitting</th></tr></thead>
+        <tbody>
+          <% keys.forEach(k => { %>
+          <tr>
+            <td><a href="/keys/<%= k.id %>"><%= k.key_number %></a></td>
+            <td class="text-muted"><a href="/key-systems/<%= k.key_system_id %>"><%= k.system_name %></a></td>
+            <td><span class="badge badge-level-<%= (k.level||'CHANGE').toLowerCase() %>"><%= k.level %></span></td>
+            <td>
+              <% if (k.bitting) { %>
+                <span class="secret-value" data-secret="<%= k.bitting %>">••••••</span>
+                <button type="button" class="btn btn-sm btn-ghost toggle-secret" onclick="toggleSecret(this)">Show</button>
+              <% } else { %>
+                <span class="text-muted">—</span>
+              <% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+    <% } %>
+
+    <% if (door.access_type !== 'KEYED') { %>
+    <div class="card">
+      <div class="card-header">
+        <h2>FOB Profiles Covering This Door <span class="count-badge"><%= fobProfiles.length %></span></h2>
+      </div>
+      <% if (fobProfiles.length === 0) { %>
+        <p class="empty-state-sm">No FOB profiles include this door. <a href="/fob-profiles">Assign from a profile's detail page.</a></p>
+      <% } else { %>
+      <table class="table table-sm">
+        <thead><tr><th>Profile</th><th>Description</th></tr></thead>
+        <tbody>
+          <% fobProfiles.forEach(p => { %>
+          <tr>
+            <td><a href="/fob-profiles/<%= p.id %>"><%= p.name %></a></td>
+            <td class="text-muted"><%= p.description || '—' %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<script>
+function toggleSecret(btn) {
+  const span = btn.previousElementSibling;
+  if (btn.textContent === 'Show') { span.textContent = span.dataset.secret; btn.textContent = 'Hide'; }
+  else { span.textContent = '••••••'; btn.textContent = 'Show'; }
+}
+</script>
+<%- include('../partials/footer') %>

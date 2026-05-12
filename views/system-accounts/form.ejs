@@ -1,0 +1,53 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1><%= title %></h1>
+  <a href="/system-accounts" class="btn btn-ghost">← Back</a>
+</div>
+
+<div class="card card-form">
+  <form action="<%= action %>" method="POST">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="system_name">System Name <span class="required">*</span></label>
+        <input type="text" id="system_name" name="system_name" required value="<%= account ? account.system_name : '' %>" placeholder="e.g. QuickBooks, Active Directory">
+      </div>
+      <div class="form-group">
+        <label for="category">Category</label>
+        <input type="text" id="category" name="category" list="category-list" value="<%= account ? (account.category || '') : '' %>" placeholder="e.g. Software, Network, Cloud">
+        <datalist id="category-list">
+          <option value="Software">
+          <option value="Network">
+          <option value="Cloud">
+          <option value="Database">
+          <option value="Email">
+          <option value="Security">
+          <option value="Other">
+        </datalist>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="account_username">Account Username <span class="required">*</span></label>
+        <input type="text" id="account_username" name="account_username" required value="<%= account ? account.account_username : '' %>" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label for="account_password">Password</label>
+        <input type="text" id="account_password" name="account_password" value="<%= account ? (account.account_password || '') : '' %>" autocomplete="off">
+        <p class="field-hint">Stored in database. Ensure restricted filesystem permissions on the database file.</p>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="url">URL</label>
+      <input type="url" id="url" name="url" value="<%= account ? (account.url || '') : '' %>" placeholder="https://...">
+    </div>
+    <div class="form-group">
+      <label for="notes">Notes</label>
+      <textarea id="notes" name="notes" rows="3"><%= account ? (account.notes || '') : '' %></textarea>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary"><%= account ? 'Save Changes' : 'Create Account' %></button>
+      <a href="/system-accounts<%= account ? '/' + account.id : '' %>" class="btn btn-ghost">Cancel</a>
+    </div>
+  </form>
+</div>
+<%- include('../partials/footer') %>

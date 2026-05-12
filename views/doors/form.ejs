@@ -1,0 +1,54 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1><%= title %></h1>
+  <a href="/doors" class="btn btn-ghost">← Back</a>
+</div>
+
+<div class="card card-form">
+  <form action="<%= action %>" method="POST">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="name">Door Name <span class="required">*</span></label>
+        <input type="text" id="name" name="name" required value="<%= door ? door.name : '' %>" placeholder="e.g. Main Entrance, Server Room">
+      </div>
+      <div class="form-group">
+        <label for="door_number">Door Number</label>
+        <input type="text" id="door_number" name="door_number" value="<%= door ? (door.door_number || '') : '' %>" placeholder="e.g. D-101">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="building">Building</label>
+        <input type="text" id="building" name="building" value="<%= door ? (door.building || '') : '' %>" placeholder="e.g. Main Office, Warehouse">
+      </div>
+      <div class="form-group">
+        <label for="floor">Floor</label>
+        <input type="text" id="floor" name="floor" value="<%= door ? (door.floor || '') : '' %>" placeholder="e.g. 1st, Ground, Basement">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="location">Location Description</label>
+        <input type="text" id="location" name="location" value="<%= door ? (door.location || '') : '' %>" placeholder="e.g. North wing hallway">
+      </div>
+      <div class="form-group">
+        <label for="access_type">Access Type <span class="required">*</span></label>
+        <select id="access_type" name="access_type" required>
+          <option value="">— Select type —</option>
+          <option value="KEYED" <%= (door && door.access_type === 'KEYED') ? 'selected' : '' %>>KEYED — physical key only</option>
+          <option value="FOB"   <%= (door && door.access_type === 'FOB')   ? 'selected' : '' %>>FOB — credential/fob only</option>
+          <option value="BOTH"  <%= (door && door.access_type === 'BOTH')  ? 'selected' : '' %>>BOTH — key and FOB</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="notes">Notes</label>
+      <textarea id="notes" name="notes" rows="3"><%= door ? (door.notes || '') : '' %></textarea>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary"><%= door ? 'Save Changes' : 'Create Door' %></button>
+      <a href="/doors<%= door ? '/' + door.id : '' %>" class="btn btn-ghost">Cancel</a>
+    </div>
+  </form>
+</div>
+<%- include('../partials/footer') %>

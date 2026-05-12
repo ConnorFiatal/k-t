@@ -1,0 +1,29 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>FOB Profiles</h1>
+  <a href="/fob-profiles/new" class="btn btn-primary">+ New Profile</a>
+</div>
+
+<div class="card">
+  <% if (profiles.length === 0) { %>
+    <p class="empty-state">No FOB profiles yet. <a href="/fob-profiles/new">Create one.</a></p>
+  <% } else { %>
+  <table class="table">
+    <thead>
+      <tr><th>Profile Name</th><th>Description</th><th>Doors</th><th>Keyrings</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% profiles.forEach(p => { %>
+      <tr>
+        <td><a href="/fob-profiles/<%= p.id %>"><strong><%= p.name %></strong></a></td>
+        <td class="text-muted text-sm"><%= p.description || '—' %></td>
+        <td><span class="count-badge"><%= p.door_count %></span></td>
+        <td><span class="count-badge"><%= p.ring_count %></span></td>
+        <td class="text-right"><a href="/fob-profiles/<%= p.id %>" class="btn btn-sm btn-outline">Manage</a></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

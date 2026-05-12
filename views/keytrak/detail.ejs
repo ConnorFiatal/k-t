@@ -1,0 +1,167 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <div>
+    <h1>Keyring <%= keyring.ring_number %></h1>
+    <p class="text-muted"><%= keyring.description || 'No description' %><%= keyring.location ? ` · ${keyring.location}` : '' %></p>
+  </div>
+  <div class="btn-group">
+    <a href="/keytrak/<%= keyring.id %>/edit" class="btn btn-outline">Edit</a>
+    <a href="/keytrak" class="btn btn-ghost">← Back</a>
+  </div>
+</div>
+
+<div class="detail-grid">
+  <div class="card">
+    <div class="card-header"><h2>Keyring Details</h2></div>
+    <table class="info-table">
+      <tr><th>Ring Number</th><td><%= keyring.ring_number %></td></tr>
+      <tr><th>Description</th><td><%= keyring.description || '—' %></td></tr>
+      <tr><th>Location</th><td><%= keyring.location || '—' %></td></tr>
+      <tr><th>Added</th><td><%= keyring.created_at %></td></tr>
+      <% if (keyring.notes) { %><tr><th>Notes</th><td><%= keyring.notes %></td></tr><% } %>
+    </table>
+  </div>
+
+  <div>
+    <!-- Staff authorizations -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Authorized Staff <span class="count-badge"><%= authorizations.length %></span></h2>
+      </div>
+      <% if (eligibleStaff.length > 0) { %>
+      <form action="/keytrak/<%= keyring.id %>/grant" method="POST" class="grant-form">
+        <select name="staff_id" required>
+          <option value="">— Select staff member —</option>
+          <% eligibleStaff.forEach(s => { %>
+            <option value="<%= s.id %>"><%= s.last_name %>, <%= s.first_name %><%= s.department ? ` (${s.department})` : '' %></option>
+          <% }) %>
+        </select>
+        <button type="submit" class="btn btn-primary">Grant Authorization</button>
+      </form>
+      <% } %>
+      <% if (authorizations.length === 0) { %>
+        <p class="empty-state-sm">No staff authorized yet.</p>
+      <% } else { %>
+      <table class="table">
+        <thead><tr><th>Name</th><th>Department</th><th>Granted</th><th>By</th><th></th></tr></thead>
+        <tbody>
+          <% authorizations.forEach(a => { %>
+          <tr class="<%= a.status === 'terminated' ? 'row-terminated' : '' %>">
+            <td><a href="/staff/<%= a.staff_id %>"><%= a.last_name %>, <%= a.first_name %></a>
+              <% if (a.status === 'terminated') { %><span class="badge badge-red badge-sm">terminated</span><% } %>
+            </td>
+            <td class="text-muted"><%= a.department || '—' %></td>
+            <td class="text-muted text-sm"><%= a.granted_at %></td>
+            <td class="text-muted"><%= a.granted_by %></td>
+            <td class="text-right">
+              <form action="/keytrak/<%= keyring.id %>/revoke/<%= a.staff_id %>" method="POST" style="display:inline">
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Revoke authorization?')">Revoke</button>
+              </form>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+
+    <!-- Physical keys on this ring -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Physical Keys <span class="count-badge"><%= assignedKeys.length %></span></h2>
+      </div>
+      <% if (eligibleKeys.length > 0) { %>
+      <form action="/keytrak/<%= keyring.id %>/keys/assign" method="POST" class="grant-form">
+        <select name="key_id" required>
+          <option value="">— Select key —</option>
+          <% eligibleKeys.forEach(k => { %>
+            <option value="<%= k.id %>"><%= k.key_number %> — <%= k.system_name %> (<%= k.level %>)</option>
+          <% }) %>
+        </select>
+        <button type="submit" class="btn btn-primary">Add Key</button>
+      </form>
+      <% } %>
+      <% if (assignedKeys.length === 0) { %>
+        <p class="empty-state-sm">No keys on this ring yet.</p>
+      <% } else { %>
+      <table class="table">
+        <thead><tr><th>Key #</th><th>System</th><th>Level</th><th>Bitting</th><th>Keyway</th><th>Assigned</th><th></th></tr></thead>
+        <tbody>
+          <% assignedKeys.forEach(k => { %>
+          <tr>
+            <td><a href="/keys/<%= k.key_id %>"><strong><%= k.key_number %></strong></a></td>
+            <td class="text-muted"><%= k.system_name %></td>
+            <td><span class="badge badge-level-<%= (k.level||'CHANGE').toLowerCase() %>"><%= k.level %></span></td>
+            <td>
+              <% if (k.bitting) { %>
+                <span class="secret-value" data-secret="<%= k.bitting %>">••••••</span>
+                <button type="button" class="btn btn-sm btn-ghost toggle-secret" onclick="toggleSecret(this)">Show</button>
+              <% } else { %>
+                <span class="text-muted">—</span>
+              <% } %>
+            </td>
+            <td class="text-muted"><%= k.keyway || '—' %></td>
+            <td class="text-muted text-sm"><%= k.assigned_at %></td>
+            <td class="text-right">
+              <form action="/keytrak/<%= keyring.id %>/keys/<%= k.key_id %>/remove" method="POST" style="display:inline">
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Remove key from ring?')">Remove</button>
+              </form>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+
+    <!-- FOB profiles on this ring -->
+    <div class="card">
+      <div class="card-header">
+        <h2>FOB Profiles <span class="count-badge"><%= assignedFobs.length %></span></h2>
+      </div>
+      <% if (eligibleFobs.length > 0) { %>
+      <form action="/keytrak/<%= keyring.id %>/fobs/assign" method="POST" class="grant-form grant-form-3col">
+        <select name="fob_profile_id" required>
+          <option value="">— Select FOB profile —</option>
+          <% eligibleFobs.forEach(f => { %>
+            <option value="<%= f.id %>"><%= f.name %></option>
+          <% }) %>
+        </select>
+        <input type="text" name="fob_serial" placeholder="FOB serial # (optional)">
+        <button type="submit" class="btn btn-primary">Add FOB</button>
+      </form>
+      <% } %>
+      <% if (assignedFobs.length === 0) { %>
+        <p class="empty-state-sm">No FOB profiles on this ring yet.</p>
+      <% } else { %>
+      <table class="table">
+        <thead><tr><th>Profile</th><th>FOB Serial</th><th>Doors</th><th>Assigned</th><th></th></tr></thead>
+        <tbody>
+          <% assignedFobs.forEach(f => { %>
+          <tr>
+            <td><a href="/fob-profiles/<%= f.fob_profile_id %>"><strong><%= f.profile_name %></strong></a></td>
+            <td class="text-muted"><%= f.fob_serial || '—' %></td>
+            <td><span class="count-badge"><%= f.door_count %></span></td>
+            <td class="text-muted text-sm"><%= f.assigned_at %></td>
+            <td class="text-right">
+              <form action="/keytrak/<%= keyring.id %>/fobs/<%= f.fob_profile_id %>/remove" method="POST" style="display:inline">
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Remove FOB profile from ring?')">Remove</button>
+              </form>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleSecret(btn) {
+  const span = btn.previousElementSibling;
+  if (btn.textContent === 'Show') { span.textContent = span.dataset.secret; btn.textContent = 'Hide'; }
+  else { span.textContent = '••••••'; btn.textContent = 'Show'; }
+}
+</script>
+<%- include('../partials/footer') %>

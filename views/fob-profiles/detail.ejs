@@ -1,0 +1,90 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <div>
+    <h1>FOB Profile: <%= profile.name %></h1>
+    <% if (profile.description) { %><p class="text-muted"><%= profile.description %></p><% } %>
+  </div>
+  <div class="btn-group">
+    <a href="/fob-profiles/<%= profile.id %>/edit" class="btn btn-outline">Edit</a>
+    <% if (onRings.length === 0) { %>
+      <form action="/fob-profiles/<%= profile.id %>/delete" method="POST" style="display:inline">
+        <button type="submit" class="btn btn-danger-outline" onclick="return confirm('Delete this FOB profile?')">Delete</button>
+      </form>
+    <% } %>
+    <a href="/fob-profiles" class="btn btn-ghost">← Back</a>
+  </div>
+</div>
+
+<div class="detail-grid">
+  <div class="card">
+    <div class="card-header">
+      <h2>Assigned to Keyrings <span class="count-badge"><%= onRings.length %></span></h2>
+    </div>
+    <% if (onRings.length === 0) { %>
+      <p class="empty-state-sm">Not assigned to any keyrings yet.</p>
+    <% } else { %>
+    <table class="table table-sm">
+      <thead><tr><th>Ring #</th><th>Description</th><th>FOB Serial</th></tr></thead>
+      <tbody>
+        <% onRings.forEach(r => { %>
+        <tr>
+          <td><a href="/keytrak/<%= r.keyring_id %>"><%= r.ring_number %></a></td>
+          <td class="text-muted"><%= r.description || '—' %></td>
+          <td class="text-muted"><%= r.fob_serial || '—' %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+    <% if (profile.notes) { %>
+      <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size:0.875rem">
+        <strong>Notes:</strong> <%= profile.notes %>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Doors in This Profile <span class="count-badge"><%= doors.length %></span></h2>
+    </div>
+
+    <% if (eligibleDoors.length > 0) { %>
+    <form action="/fob-profiles/<%= profile.id %>/doors/add" method="POST" class="grant-form">
+      <select name="door_id" required>
+        <option value="">— Select FOB/BOTH door —</option>
+        <% eligibleDoors.forEach(d => { %>
+          <option value="<%= d.id %>"><%= d.name %><%= d.door_number ? ` (${d.door_number})` : '' %><%= d.building ? ` — ${d.building}` : '' %></option>
+        <% }) %>
+      </select>
+      <button type="submit" class="btn btn-primary">Add Door</button>
+    </form>
+    <% } else { %>
+      <p class="empty-state-sm text-muted">All FOB-accessible doors are already in this profile.</p>
+    <% } %>
+
+    <% if (doors.length === 0) { %>
+      <p class="empty-state-sm">No doors in this profile yet.</p>
+    <% } else { %>
+    <table class="table">
+      <thead><tr><th>Door</th><th>#</th><th>Building</th><th>Floor</th><th>Type</th><th></th></tr></thead>
+      <tbody>
+        <% doors.forEach(d => { %>
+        <tr>
+          <td><a href="/doors/<%= d.id %>"><%= d.name %></a></td>
+          <td class="text-muted"><%= d.door_number || '—' %></td>
+          <td class="text-muted"><%= d.building || '—' %></td>
+          <td class="text-muted"><%= d.floor || '—' %></td>
+          <td><span class="badge badge-access-<%= d.access_type.toLowerCase() %>"><%= d.access_type %></span></td>
+          <td class="text-right">
+            <form action="/fob-profiles/<%= profile.id %>/doors/<%= d.id %>/remove" method="POST" style="display:inline">
+              <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Remove this door?')">Remove</button>
+            </form>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials/footer') %>
