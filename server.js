@@ -15,6 +15,7 @@ const keysRoutes = require('./routes/keys');
 const doorsRoutes = require('./routes/doors');
 const fobProfilesRoutes = require('./routes/fobProfiles');
 const reportsRoutes = require('./routes/reports');
+const importRoutes  = require('./routes/import');
 const { db } = require('./db');
 
 const app = express();
@@ -70,6 +71,7 @@ app.use('/keys', keysRoutes);
 app.use('/doors', doorsRoutes);
 app.use('/fob-profiles', fobProfilesRoutes);
 app.use('/reports', reportsRoutes);
+app.use('/import', importRoutes);
 
 app.use((req, res) => res.status(404).render('404', { title: 'Not Found' }));
 
