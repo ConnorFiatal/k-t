@@ -72,7 +72,7 @@ Combinations link keys to doors. Manage them from the door or key detail pages, 
 
 ## Bulk Import
 
-Navigate to `/import` to access the import tool. Each entity has its own upload form and a downloadable CSV template.
+Navigate to `/import.html` to access the import tool. Each entity has its own upload form and a downloadable CSV template.
 
 ### Import Order
 Always import in this order to avoid reference errors:
