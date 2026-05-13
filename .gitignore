@@ -1,3 +1,4 @@
 data/*.db-shm
 data/*.db-wal
 node_modules/
+node_modules/
