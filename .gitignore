@@ -4,3 +4,9 @@ node_modules/
 node_modules/
 *.log
 server.err
+# SQLite runtime files
+data/*.db-wal
+data/*.db-shm
+
+# User uploads
+public/uploads/
