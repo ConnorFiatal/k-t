@@ -1,0 +1,99 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <div>
+    <h1>Physical Key Copies</h1>
+    <p class="text-muted">Individual stamped key copies tracked from locksmith to holder.</p>
+  </div>
+  <div class="btn-group no-print">
+    <a href="/physical-keys/new" class="btn btn-outline">+ Add Single</a>
+    <a href="/physical-keys/batch" class="btn btn-primary">+ Add Batch</a>
+    <a href="/key-transactions" class="btn btn-outline">Transactions</a>
+  </div>
+</div>
+
+<!-- Status summary bar -->
+<div class="pk-status-bar no-print">
+  <a href="/physical-keys" class="pk-stat <%= !filters.status ? 'pk-stat-active' : '' %>">
+    All <span class="count-badge"><%= counts.active + counts.lost + counts.damaged + counts.destroyed %></span>
+  </a>
+  <a href="/physical-keys?status=active" class="pk-stat <%= filters.status === 'active' ? 'pk-stat-active' : '' %>">
+    <span class="badge badge-pk-active">Active</span> <span class="count-badge"><%= counts.active %></span>
+  </a>
+  <a href="/physical-keys?status=lost" class="pk-stat <%= filters.status === 'lost' ? 'pk-stat-active' : '' %>">
+    <span class="badge badge-pk-lost">Lost</span> <span class="count-badge"><%= counts.lost %></span>
+  </a>
+  <a href="/physical-keys?status=damaged" class="pk-stat <%= filters.status === 'damaged' ? 'pk-stat-active' : '' %>">
+    <span class="badge badge-pk-damaged">Damaged</span> <span class="count-badge"><%= counts.damaged %></span>
+  </a>
+  <a href="/physical-keys?status=destroyed" class="pk-stat <%= filters.status === 'destroyed' ? 'pk-stat-active' : '' %>">
+    <span class="badge badge-pk-destroyed">Destroyed</span> <span class="count-badge"><%= counts.destroyed %></span>
+  </a>
+</div>
+
+<!-- Filter bar -->
+<div class="card">
+  <form class="filter-bar no-print" method="GET" action="/physical-keys">
+    <input type="text" name="q" value="<%= filters.q %>" placeholder="Search stamp #, key #, system…">
+    <select name="system_id">
+      <option value="">All Systems</option>
+      <% systems.forEach(s => { %>
+        <option value="<%= s.id %>" <%= filters.system_id == s.id ? 'selected' : '' %>><%= s.name %></option>
+      <% }) %>
+    </select>
+    <input type="hidden" name="status" value="<%= filters.status %>">
+    <button type="submit" class="btn btn-outline">Filter</button>
+    <a href="/physical-keys<%= filters.status ? '?status=' + filters.status : '' %>" class="btn btn-ghost">Reset</a>
+  </form>
+
+  <% if (keys.length === 0) { %>
+    <p class="empty-state">No key copies found.</p>
+  <% } else { %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Stamp #</th>
+        <th>Key Type</th>
+        <th>System</th>
+        <th>Level</th>
+        <th>Status</th>
+        <th>Ring</th>
+        <th>Current Holder</th>
+        <th>Expiry</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% keys.forEach(k => { %>
+      <tr class="<%= k.isOverdue ? 'row-overdue' : k.isExpiringSoon ? 'row-expiring' : '' %>">
+        <td><a href="/physical-keys/<%= k.id %>"><strong><%= k.stamp_number %></strong></a></td>
+        <td><a href="/keys/<%= k.key_type_id %>" class="text-muted"><%= k.key_number %></a></td>
+        <td class="text-muted"><%= k.system_name %></td>
+        <td><span class="badge badge-level-<%= (k.level||'change').toLowerCase() %>"><%= k.level %></span></td>
+        <td><span class="badge badge-pk-<%= k.status %>"><%= STATUS_LABELS[k.status] || k.status %></span></td>
+        <td class="text-muted"><%= k.ring_number || '—' %></td>
+        <td>
+          <% if (k.holder_first) { %>
+            <a href="/staff/<%= k.holder_staff_id %>"><%= k.holder_last %>, <%= k.holder_first %></a>
+          <% } else { %>
+            <span class="text-muted">—</span>
+          <% } %>
+        </td>
+        <td>
+          <% if (k.expiry_date) { %>
+            <span class="<%= k.isOverdue ? 'text-danger' : k.isExpiringSoon ? 'text-warning' : 'text-muted' %>">
+              <%= k.expiry_date %>
+              <% if (k.isOverdue) { %><span class="badge badge-red badge-sm">overdue</span><% } %>
+              <% if (k.isExpiringSoon) { %><span class="badge badge-orange badge-sm">soon</span><% } %>
+            </span>
+          <% } else { %><span class="text-muted">—</span><% } %>
+        </td>
+        <td class="text-right">
+          <a href="/physical-keys/<%= k.id %>" class="btn btn-sm btn-outline">View</a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

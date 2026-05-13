@@ -1,0 +1,61 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Report: Outstanding Keys by Person</h1>
+  <div class="btn-group">
+    <button onclick="window.print()" class="btn btn-outline no-print">Print</button>
+    <a href="/reports/keys/outstanding.csv" class="btn btn-outline no-print">↓ CSV</a>
+    <a href="/reports/keys" class="btn btn-ghost no-print">← Reports</a>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:1rem">
+  <form class="filter-bar no-print" method="GET" action="/reports/keys/outstanding">
+    <select name="staff_id">
+      <option value="">All Staff</option>
+      <% allStaff.forEach(s => { %>
+        <option value="<%= s.id %>" <%= filters.staff_id == s.id ? 'selected' : '' %>><%= s.last_name %>, <%= s.first_name %></option>
+      <% }) %>
+    </select>
+    <button type="submit" class="btn btn-outline">Filter</button>
+    <a href="/reports/keys/outstanding" class="btn btn-ghost">Reset</a>
+  </form>
+</div>
+
+<p class="report-count"><%= rows.length %> outstanding key<%= rows.length !== 1 ? 's' : '' %></p>
+
+<% if (rows.length === 0) { %>
+  <div class="card"><p class="empty-state">No outstanding keys.</p></div>
+<% } else { %>
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>Holder</th><th>Department</th><th>Stamp #</th><th>Key Type</th><th>System</th><th>Ring</th><th>Issued</th><th>Expiry</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% rows.forEach(r => { %>
+      <tr class="<%= r.isOverdue ? 'row-overdue' : '' %>">
+        <td><a href="/staff/<%= r.staff_id %>"><%= r.last_name %>, <%= r.first_name %></a></td>
+        <td class="text-muted"><%= r.department || '—' %></td>
+        <td><a href="/physical-keys/<%= r.agreement_id %>"><strong><%= r.stamp_number %></strong></a></td>
+        <td class="text-muted"><%= r.key_number %></td>
+        <td class="text-muted"><%= r.system_name %></td>
+        <td class="text-muted"><%= r.ring_number || '—' %></td>
+        <td><%= r.issued_date %></td>
+        <td>
+          <% if (r.expiry_date) { %>
+            <span class="<%= r.isOverdue ? 'text-danger' : '' %>">
+              <%= r.expiry_date %>
+              <% if (r.isOverdue) { %><span class="badge badge-red badge-sm">OVERDUE</span><% } %>
+            </span>
+          <% } else { %><span class="text-muted">None</span><% } %>
+        </td>
+        <td class="text-right no-print">
+          <a href="/key-agreements/<%= r.agreement_id %>" class="btn btn-sm btn-ghost">Agreement</a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+<%- include('../partials/footer') %>

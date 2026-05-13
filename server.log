@@ -1,0 +1,4 @@
+◇ injected env (7) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+KeyDog running at http://localhost:3000
+Default login: admin / admin123 (change this immediately)
+[keycron] Nightly expiry check scheduled (06:00 daily)

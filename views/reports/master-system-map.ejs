@@ -1,7 +1,10 @@
 <%- include('../partials/header') %>
 <div class="page-header">
   <h1>Report: Master System Map</h1>
-  <a href="/reports" class="btn btn-ghost">← Reports</a>
+  <div class="btn-group">
+    <button onclick="window.print()" class="btn btn-outline no-print">Print</button>
+    <a href="/reports" class="btn btn-ghost no-print">← Reports</a>
+  </div>
 </div>
 
 <div class="card" style="margin-bottom:1.5rem">

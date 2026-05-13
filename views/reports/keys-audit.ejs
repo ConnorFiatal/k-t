@@ -1,0 +1,65 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Report: Key Custody Audit Log</h1>
+  <div class="btn-group">
+    <button onclick="window.print()" class="btn btn-outline no-print">Print / PDF</button>
+    <a href="/reports/keys/audit-log.csv<%= new URLSearchParams(filters).toString() ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(filters).filter(([,v]) => v))).toString() : '' %>" class="btn btn-outline no-print">↓ CSV</a>
+    <a href="/reports/keys" class="btn btn-ghost no-print">← Reports</a>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:1rem">
+  <form class="filter-bar no-print" method="GET" action="/reports/keys/audit-log">
+    <input type="text" name="q" value="<%= filters.q %>" placeholder="Search stamp #, key #…">
+    <div class="filter-group">
+      <label class="filter-label">From</label>
+      <input type="date" name="from_date" value="<%= filters.from_date %>">
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">To</label>
+      <input type="date" name="to_date" value="<%= filters.to_date %>">
+    </div>
+    <select name="type">
+      <option value="">All Types</option>
+      <% txTypes.forEach(t => { %>
+        <option value="<%= t %>" <%= filters.type === t ? 'selected' : '' %>><%= t.replace(/_/g,' ') %></option>
+      <% }) %>
+    </select>
+    <button type="submit" class="btn btn-outline">Filter</button>
+    <a href="/reports/keys/audit-log" class="btn btn-ghost">Reset</a>
+  </form>
+</div>
+
+<p class="report-count"><%= rows.length %> event<%= rows.length !== 1 ? 's' : '' %><% if (rows.length >= 500) { %> (showing first 500 — use CSV for full export)<% } %></p>
+
+<% if (rows.length === 0) { %>
+  <div class="card"><p class="empty-state">No custody events match the selected filters.</p></div>
+<% } else { %>
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>Date/Time</th><th>Event</th><th>Stamp #</th><th>Key</th><th>System</th><th>From</th><th>To</th><th>By</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <% rows.forEach(r => { %>
+      <tr>
+        <td class="text-muted text-sm" style="white-space:nowrap"><%= r.transferred_date %></td>
+        <td><span class="badge badge-tx-<%= r.transaction_type.replace(/_/g,'-') %> badge-sm"><%= r.transaction_type.replace(/_/g,' ') %></span></td>
+        <td><a href="/physical-keys/<%= r.physical_key_id %>"><strong><%= r.stamp_number %></strong></a></td>
+        <td class="text-muted text-sm"><%= r.key_number %></td>
+        <td class="text-muted text-sm"><%= r.system_name %></td>
+        <td class="text-muted text-sm">
+          <% if (r.from_first) { %><%= r.from_last %>, <%= r.from_first %><% } else { %>—<% } %>
+        </td>
+        <td class="text-muted text-sm">
+          <% if (r.to_first) { %><%= r.to_last %>, <%= r.to_first %><% } else { %>—<% } %>
+        </td>
+        <td class="text-muted text-sm"><%= r.performed_by %></td>
+        <td class="text-muted text-sm"><%= r.notes || '—' %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+<%- include('../partials/footer') %>

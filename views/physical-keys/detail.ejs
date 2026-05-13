@@ -1,0 +1,247 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <div>
+    <h1>
+      Key Copy <strong><%= pk.stamp_number %></strong>
+      <span class="badge badge-pk-<%= pk.status %> badge-lg"><%= STATUS_LABELS[pk.status] || pk.status %></span>
+      <% if (isOverdue) { %><span class="badge badge-red badge-lg">Overdue</span><% } %>
+      <% if (isExpiringSoon) { %><span class="badge badge-orange badge-lg">Expiring Soon</span><% } %>
+    </h1>
+    <p class="text-muted">
+      <a href="/keys/<%= pk.key_type_id %>"><%= pk.key_number %></a>
+      — <a href="/key-systems/<%= pk.key_system_id || '' %>"><%= pk.system_name %></a>
+      <span class="badge badge-level-<%= (pk.level||'change').toLowerCase() %>"><%= pk.level %></span>
+    </p>
+  </div>
+  <div class="btn-group no-print">
+    <a href="/physical-keys/<%= pk.id %>/edit" class="btn btn-outline">Edit</a>
+    <a href="/physical-keys" class="btn btn-ghost">← Back</a>
+  </div>
+</div>
+
+<div class="detail-grid">
+  <!-- Left column: info + actions -->
+  <div>
+    <!-- Key Copy Details -->
+    <div class="card">
+      <div class="card-header"><h2>Key Copy Details</h2></div>
+      <table class="info-table">
+        <tr><th>Stamp #</th><td><strong><%= pk.stamp_number %></strong></td></tr>
+        <tr><th>Key Type</th><td><a href="/keys/<%= pk.key_type_id %>"><%= pk.key_number %></a> — <%= pk.system_name %></td></tr>
+        <tr><th>Level</th><td><span class="badge badge-level-<%= (pk.level||'change').toLowerCase() %>"><%= pk.level %></span></td></tr>
+        <tr><th>Status</th><td><span class="badge badge-pk-<%= pk.status %>"><%= STATUS_LABELS[pk.status] %></span></td></tr>
+        <tr><th>KeyTrak Ring</th><td><%= pk.ring_number ? `<a href="/ring-checkout/${pk.keytrak_ring_id}">Ring ${pk.ring_number}</a>` : '—' %></td></tr>
+        <tr><th>Expiry Date</th>
+          <td>
+            <% if (pk.expiry_date) { %>
+              <span class="<%= isOverdue ? 'text-danger font-weight-bold' : isExpiringSoon ? 'text-warning' : '' %>">
+                <%= pk.expiry_date %>
+              </span>
+              <% if (isOverdue) { %><span class="badge badge-red badge-sm ml-1">OVERDUE</span><% } %>
+              <% if (isExpiringSoon) { %><span class="badge badge-orange badge-sm ml-1">Due Soon</span><% } %>
+            <% } else { %><span class="text-muted">None</span><% } %>
+          </td>
+        </tr>
+        <tr><th>Current Holder</th><td>
+          <% if (pk.holder_first) { %>
+            <a href="/staff/<%= pk.holder_staff_id %>"><%= pk.holder_last %>, <%= pk.holder_first %></a>
+          <% } else { %><span class="text-muted">Not issued</span><% } %>
+        </td></tr>
+        <tr><th>Received</th><td class="text-muted text-sm"><%= pk.created_at %></td></tr>
+        <% if (pk.notes) { %><tr><th>Notes</th><td><%= pk.notes %></td></tr><% } %>
+      </table>
+    </div>
+
+    <!-- Active Agreement -->
+    <% if (activeAgreement) { %>
+    <div class="card">
+      <div class="card-header">
+        <h2>Active Issuance</h2>
+        <a href="/key-agreements/<%= activeAgreement.id %>" class="btn btn-sm btn-outline no-print">View / Print Agreement</a>
+      </div>
+      <table class="info-table">
+        <tr><th>Holder</th><td><a href="/staff/<%= activeAgreement.staff_id %>"><%= activeAgreement.last_name %>, <%= activeAgreement.first_name %></a></td></tr>
+        <tr><th>Department</th><td class="text-muted"><%= activeAgreement.department || '—' %></td></tr>
+        <tr><th>Issued</th><td><%= activeAgreement.issued_date %></td></tr>
+        <tr><th>Expiry</th><td class="<%= activeAgreement.expiry_date && new Date(activeAgreement.expiry_date) < new Date() ? 'text-danger' : '' %>"><%= activeAgreement.expiry_date || '—' %></td></tr>
+        <tr><th>Signed Copy</th><td>
+          <% if (activeAgreement.signed_agreement_filename) { %>
+            <a href="/uploads/agreements/<%= activeAgreement.signed_agreement_filename %>" target="_blank">View signed copy</a>
+          <% } else { %><span class="text-muted">Not uploaded</span><% } %>
+        </td></tr>
+      </table>
+      <!-- Return form -->
+      <% if (pk.status === 'active') { %>
+      <div class="card-section no-print">
+        <form action="/physical-keys/<%= pk.id %>/return" method="POST" class="inline-action-form">
+          <input type="date" name="returned_date" required value="<%= new Date().toISOString().split('T')[0] %>">
+          <input type="text" name="notes" placeholder="Condition notes (optional)" style="flex:1">
+          <button type="submit" class="btn btn-outline" onclick="return confirm('Record return of key <%= pk.stamp_number %>?')">Record Return</button>
+        </form>
+      </div>
+      <% } %>
+    </div>
+    <% } %>
+
+    <!-- Issue form (when not issued and active) -->
+    <% if (pk.status === 'active' && !activeAgreement && activeStaff.length > 0) { %>
+    <div class="card no-print">
+      <div class="card-header"><h2>Issue to Person</h2></div>
+      <div class="card-section">
+        <form action="/physical-keys/<%= pk.id %>/issue" method="POST" class="form-stacked">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Staff Member <span class="required">*</span></label>
+              <select name="staff_id" required>
+                <option value="">— Select —</option>
+                <% activeStaff.forEach(s => { %>
+                  <option value="<%= s.id %>"><%= s.last_name %>, <%= s.first_name %><%= s.department ? ` (${s.department})` : '' %></option>
+                <% }) %>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Issue Date <span class="required">*</span></label>
+              <input type="date" name="issued_date" required value="<%= new Date().toISOString().split('T')[0] %>">
+            </div>
+            <div class="form-group">
+              <label>Expiry Date</label>
+              <input type="date" name="expiry_date" value="<%= pk.expiry_date || '' %>">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <input type="text" name="notes" placeholder="Optional notes">
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Issue Key & Generate Agreement</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- Lifecycle Actions -->
+    <% if (pk.status === 'active') { %>
+    <div class="card no-print">
+      <div class="card-header"><h2>Report Event</h2></div>
+      <div class="card-section">
+        <div class="action-tiles">
+
+          <details class="action-tile action-tile-warning">
+            <summary>Report Lost</summary>
+            <form action="/physical-keys/<%= pk.id %>/lost" method="POST" class="tile-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Date Lost</label>
+                  <input type="date" name="lost_date" value="<%= new Date().toISOString().split('T')[0] %>">
+                </div>
+                <div class="form-group">
+                  <label>Report / Incident #</label>
+                  <input type="text" name="report_number" placeholder="Optional">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Notes</label>
+                <textarea name="notes" rows="2" placeholder="Circumstances of loss…"></textarea>
+              </div>
+              <button type="submit" class="btn btn-danger" onclick="return confirm('Mark key <%= pk.stamp_number %> as LOST? This cannot be undone without editing.')">Confirm Lost</button>
+            </form>
+          </details>
+
+          <details class="action-tile action-tile-danger">
+            <summary>Report Damaged / Destroyed</summary>
+            <form action="/physical-keys/<%= pk.id %>/damaged" method="POST" class="tile-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Type</label>
+                  <select name="_type" onchange="this.closest('form').action='/physical-keys/<%= pk.id %>/' + this.value">
+                    <option value="damaged">Damaged</option>
+                    <option value="destroyed">Destroyed</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Date</label>
+                  <input type="date" name="damage_date" value="<%= new Date().toISOString().split('T')[0] %>">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Witness</label>
+                  <input type="text" name="witness" placeholder="Full name">
+                </div>
+                <div class="form-group">
+                  <label>Notes</label>
+                  <input type="text" name="notes" placeholder="Description of damage…">
+                </div>
+              </div>
+              <button type="submit" class="btn btn-danger" onclick="return confirm('Record damage/destruction for key <%= pk.stamp_number %>?')">Confirm</button>
+            </form>
+          </details>
+
+        </div>
+      </div>
+    </div>
+    <% } %>
+  </div>
+
+  <!-- Right column: custody log + transactions -->
+  <div>
+    <!-- Chain of Custody -->
+    <div class="card">
+      <div class="card-header"><h2>Chain of Custody <span class="count-badge"><%= custodyLog.length %></span></h2></div>
+      <% if (custodyLog.length === 0) { %>
+        <p class="empty-state-sm">No custody records yet.</p>
+      <% } else { %>
+      <div class="custody-timeline">
+        <% custodyLog.forEach((entry, i) => { %>
+        <div class="custody-event">
+          <div class="custody-dot custody-dot-<%= entry.transaction_type %>"></div>
+          <div class="custody-body">
+            <div class="custody-type"><%= entry.transaction_type.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase()) %></div>
+            <div class="custody-people">
+              <% if (entry.from_first) { %><span class="text-muted text-sm">From: <%= entry.from_last %>, <%= entry.from_first %></span><% } %>
+              <% if (entry.to_first) { %><span class="text-muted text-sm"><%= entry.from_first ? ' → ' : '' %>To: <%= entry.to_last %>, <%= entry.to_first %></span><% } %>
+            </div>
+            <div class="custody-meta text-muted text-sm">
+              <%= entry.transferred_date %> &nbsp;·&nbsp; by <%= entry.performed_by %>
+            </div>
+            <% if (entry.notes) { %><div class="custody-notes text-muted text-sm"><%= entry.notes %></div><% } %>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+      <% } %>
+    </div>
+
+    <!-- Transaction History -->
+    <div class="card">
+      <div class="card-header"><h2>Transaction History <span class="count-badge"><%= transactions.length %></span></h2></div>
+      <% if (transactions.length === 0) { %>
+        <p class="empty-state-sm">No transactions yet.</p>
+      <% } else { %>
+      <table class="table table-sm">
+        <thead><tr><th>Date</th><th>Type</th><th>Person</th><th>By</th><th>Receipt</th><th>Notes</th></tr></thead>
+        <tbody>
+          <% transactions.forEach(t => { %>
+          <tr>
+            <td class="text-muted text-sm"><%= t.transaction_date %></td>
+            <td><span class="badge badge-tx-<%= t.transaction_type.replace(/_/g,'-') %>"><%= t.transaction_type.replace(/_/g,' ') %></span></td>
+            <td class="text-muted">
+              <% if (t.first_name) { %><%= t.last_name %>, <%= t.first_name %><% } else { %>—<% } %>
+            </td>
+            <td class="text-muted text-sm"><%= t.performed_by %></td>
+            <td>
+              <% if (t.receipt_filename) { %>
+                <a href="/uploads/receipts/<%= t.receipt_filename %>" target="_blank" class="text-sm">📎 Receipt</a>
+              <% } else { %><span class="text-muted">—</span><% } %>
+            </td>
+            <td class="text-muted text-sm"><%= t.notes || '—' %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

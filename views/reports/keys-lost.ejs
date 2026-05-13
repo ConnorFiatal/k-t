@@ -1,0 +1,42 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Report: Lost Key History</h1>
+  <div class="btn-group">
+    <button onclick="window.print()" class="btn btn-outline no-print">Print</button>
+    <a href="/reports/keys/lost-history.csv" class="btn btn-outline no-print">↓ CSV</a>
+    <a href="/reports/keys" class="btn btn-ghost no-print">← Reports</a>
+  </div>
+</div>
+
+<p class="report-count"><%= rows.length %> lost/destroyed key<%= rows.length !== 1 ? 's' : '' %></p>
+
+<% if (rows.length === 0) { %>
+  <div class="card"><p class="empty-state">No lost or destroyed keys on record.</p></div>
+<% } else { %>
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr><th>Stamp #</th><th>Key Type</th><th>System</th><th>Status</th><th>Received</th><th>Lost/Destroyed</th><th>Last Held By</th><th>By</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <% rows.forEach(r => { %>
+      <tr>
+        <td><a href="/physical-keys/<%= r.id %>"><strong><%= r.stamp_number %></strong></a></td>
+        <td class="text-muted"><%= r.key_number %></td>
+        <td class="text-muted"><%= r.system_name %></td>
+        <td><span class="badge badge-pk-<%= r.status %>"><%= r.status %></span></td>
+        <td class="text-muted text-sm"><%= r.received_date ? r.received_date.split(' ')[0] : '—' %></td>
+        <td class="text-muted"><%= r.lost_date %></td>
+        <td class="text-muted">
+          <% if (r.first_name) { %><%= r.last_name %>, <%= r.first_name %><% if (r.department) { %> <span class="text-sm">(<%=r.department%>)</span><% } %>
+          <% } else { %>—<% } %>
+        </td>
+        <td class="text-muted text-sm"><%= r.performed_by %></td>
+        <td class="text-muted text-sm"><%= r.lost_notes || '—' %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+<%- include('../partials/footer') %>

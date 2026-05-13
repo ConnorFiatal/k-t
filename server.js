@@ -24,7 +24,14 @@ const fobProfilesRoutes = require('./routes/fobProfiles');
 const reportsRoutes = require('./routes/reports');
 const importRoutes      = require('./routes/import');
 const emailRoutes       = require('./routes/email');
-const floorPlansRoutes  = require('./routes/floorPlans');
+const exportRoutes      = require('./routes/export');
+const floorPlansRoutes      = require('./routes/floorPlans');
+const physicalKeysRoutes    = require('./routes/physicalKeys');
+const ringCheckoutRoutes    = require('./routes/ringCheckout');
+const keyTransactionsRoutes = require('./routes/keyTransactions');
+const keyAgreementsRoutes   = require('./routes/keyAgreements');
+const keyReportsRoutes      = require('./routes/keyReports');
+const { setupKeyCron }      = require('./routes/keyCron');
 const { db } = require('./db');
 
 const app = express();
@@ -66,6 +73,7 @@ app.get('/', (req, res) => {
     keySystems:     db.prepare('SELECT COUNT(*) AS c FROM key_systems').get().c,
     floorPlans:     db.prepare('SELECT COUNT(*) AS c FROM floor_plans').get().c,
     fobProfiles:    db.prepare('SELECT COUNT(*) AS c FROM fob_profiles').get().c,
+    physicalKeys:   db.prepare("SELECT COUNT(*) AS c FROM physical_keys WHERE status='active'").get().c,
   };
   const recentAudit = db.prepare('SELECT * FROM audit_log ORDER BY performed_at DESC LIMIT 10').all();
   res.render('dashboard', { title: 'Dashboard', stats, recentAudit });
@@ -84,11 +92,18 @@ app.use('/fob-profiles', fobProfilesRoutes);
 app.use('/reports', reportsRoutes);
 app.use('/import', importRoutes);
 app.use('/floor-plans', floorPlansRoutes);
-app.use('/email', emailRoutes);
+app.use('/email',            emailRoutes);
+app.use('/export',           exportRoutes);
+app.use('/physical-keys',    physicalKeysRoutes);
+app.use('/ring-checkout',    ringCheckoutRoutes);
+app.use('/key-transactions', keyTransactionsRoutes);
+app.use('/key-agreements',   keyAgreementsRoutes);
+app.use('/reports/keys',     keyReportsRoutes);
 
 app.use((req, res) => res.status(404).render('404', { title: 'Not Found' }));
 
 app.listen(PORT, () => {
   console.log(`KeyDog running at http://localhost:${PORT}`);
   console.log('Default login: admin / admin123 (change this immediately)');
+  setupKeyCron();
 });

@@ -202,6 +202,62 @@ function initializeDatabase() {
     );
   `);
 
+  // ── Physical Key Copy Tracking tables ─────────────────────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS physical_keys (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      stamp_number   TEXT NOT NULL UNIQUE,
+      key_type_id    INTEGER NOT NULL REFERENCES keys(id),
+      status         TEXT NOT NULL DEFAULT 'active',
+      keytrak_ring_id INTEGER REFERENCES keyrings(id),
+      notes          TEXT,
+      expiry_date    DATE,
+      created_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at     DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS key_transactions (
+      id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+      physical_key_id     INTEGER NOT NULL REFERENCES physical_keys(id),
+      transaction_type    TEXT NOT NULL,
+      transaction_date    TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+      performed_by        TEXT NOT NULL,
+      assigned_to_staff_id INTEGER REFERENCES staff(id),
+      notes               TEXT,
+      receipt_filename    TEXT,
+      linked_key_id       INTEGER REFERENCES physical_keys(id),
+      created_at          DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS key_agreements (
+      id                        INTEGER PRIMARY KEY AUTOINCREMENT,
+      physical_key_id           INTEGER NOT NULL REFERENCES physical_keys(id),
+      staff_id                  INTEGER NOT NULL REFERENCES staff(id),
+      issued_date               DATE NOT NULL,
+      returned_date             DATE,
+      expiry_date               DATE,
+      acknowledgment_text       TEXT,
+      signed_agreement_filename TEXT,
+      created_at                DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS key_custody_log (
+      id               INTEGER PRIMARY KEY AUTOINCREMENT,
+      physical_key_id  INTEGER NOT NULL REFERENCES physical_keys(id),
+      from_staff_id    INTEGER REFERENCES staff(id),
+      to_staff_id      INTEGER REFERENCES staff(id),
+      transferred_date TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+      performed_by     TEXT NOT NULL,
+      transaction_type TEXT NOT NULL,
+      notes            TEXT
+    );
+  `);
+
+  // ── Migrations: keyrings checkout columns ─────────────────────────────────
+  try { db.exec('ALTER TABLE keyrings ADD COLUMN current_holder_staff_id INTEGER REFERENCES staff(id)'); } catch (_) {}
+  try { db.exec('ALTER TABLE keyrings ADD COLUMN checked_out_date DATETIME'); } catch (_) {}
+  try { db.exec('ALTER TABLE keyrings ADD COLUMN checked_out_notes TEXT'); } catch (_) {}
+
   // Migration: add email column to admin_users if it doesn't exist yet
   try { db.exec('ALTER TABLE admin_users ADD COLUMN email TEXT'); } catch (_) {}
 

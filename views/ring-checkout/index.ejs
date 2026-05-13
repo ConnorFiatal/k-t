@@ -1,0 +1,61 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <div>
+    <h1>Keytrak Ring Checkout</h1>
+    <p class="text-muted">Track which staff member has each physical ring checked out.</p>
+  </div>
+  <a href="/keytrak" class="btn btn-ghost no-print">Ring Management →</a>
+</div>
+
+<div class="card">
+  <% if (rings.length === 0) { %>
+    <p class="empty-state">No keyrings configured yet. <a href="/keytrak/new">Add one.</a></p>
+  <% } else { %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Ring #</th>
+        <th>Description</th>
+        <th>Physical Keys</th>
+        <th>Key Types</th>
+        <th>Status</th>
+        <th>Checked Out To</th>
+        <th>Since</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% rings.forEach(r => { %>
+      <tr class="<%= r.holder_id ? 'row-checked-out' : '' %>">
+        <td><a href="/ring-checkout/<%= r.id %>"><strong><%= r.ring_number %></strong></a></td>
+        <td class="text-muted"><%= r.description || '—' %></td>
+        <td><span class="count-badge"><%= r.physical_key_count %></span></td>
+        <td><span class="count-badge"><%= r.key_type_count %></span></td>
+        <td>
+          <% if (r.holder_id) { %>
+            <span class="badge badge-orange">Checked Out</span>
+          <% } else { %>
+            <span class="badge badge-green">Available</span>
+          <% } %>
+        </td>
+        <td>
+          <% if (r.holder_id) { %>
+            <a href="/staff/<%= r.holder_id %>"><%= r.holder_last %>, <%= r.holder_first %></a>
+            <% if (r.holder_dept) { %><span class="text-muted text-sm"> · <%= r.holder_dept %></span><% } %>
+          <% } else { %>
+            <span class="text-muted">—</span>
+          <% } %>
+        </td>
+        <td class="text-muted text-sm"><%= r.checked_out_date || '—' %></td>
+        <td class="text-right">
+          <a href="/ring-checkout/<%= r.id %>" class="btn btn-sm btn-outline">
+            <%= r.holder_id ? 'Check In' : 'Check Out' %>
+          </a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

@@ -1,0 +1,62 @@
+<%- include('partials/header') %>
+<div class="page-header">
+  <h1>CSV Export</h1>
+</div>
+<p class="text-muted" style="margin-bottom:1.5rem">
+  Download a full CSV snapshot of any entity. Files include a UTF-8 BOM so they open correctly in Excel.
+</p>
+
+<div class="import-grid">
+
+  <div class="import-card">
+    <h2>Doors</h2>
+    <div class="card-sub">All doors with building, floor, room, description and access type.</div>
+    <div class="col-hint">name, building, floor, room, description, door_type, door_number</div>
+    <div class="export-count"><span class="count-badge"><%= counts.doors %></span> rows</div>
+    <a href="/export/doors" class="btn btn-primary btn-sm" style="margin-top:.5rem">
+      ↓ Download doors.csv
+    </a>
+  </div>
+
+  <div class="import-card">
+    <h2>Keys</h2>
+    <div class="card-sub">All keys with system, level, parent key, bitting, keyway and key blank.</div>
+    <div class="col-hint">key_number, system_name, level, parent_key_number, bitting, keyway, key_blank, notes</div>
+    <div class="export-count"><span class="count-badge"><%= counts.keys %></span> rows</div>
+    <a href="/export/keys" class="btn btn-primary btn-sm" style="margin-top:.5rem">
+      ↓ Download keys.csv
+    </a>
+  </div>
+
+  <div class="import-card">
+    <h2>Users (Staff)</h2>
+    <div class="card-sub">All staff members with contact details, department, title and status.</div>
+    <div class="col-hint">first_name, last_name, employee_id, department, title, email, phone, start_date, status, notes</div>
+    <div class="export-count"><span class="count-badge"><%= counts.users %></span> rows</div>
+    <a href="/export/users" class="btn btn-primary btn-sm" style="margin-top:.5rem">
+      ↓ Download users.csv
+    </a>
+  </div>
+
+  <div class="import-card">
+    <h2>Combinations (Key → Door)</h2>
+    <div class="card-sub">All key-to-door access links. Suitable for re-import into another instance.</div>
+    <div class="col-hint">key_number, system_name, door_name</div>
+    <div class="export-count"><span class="count-badge"><%= counts.combinations %></span> rows</div>
+    <a href="/export/combinations" class="btn btn-primary btn-sm" style="margin-top:.5rem">
+      ↓ Download combinations.csv
+    </a>
+  </div>
+
+  <div class="import-card">
+    <h2>System Accounts</h2>
+    <div class="card-sub">All system credentials including stored passwords. Handle with care.</div>
+    <div class="col-hint">account_name, username, password, url, access_level, notes</div>
+    <div class="export-count"><span class="count-badge"><%= counts.systemAccounts %></span> rows</div>
+    <a href="/export/system-accounts" class="btn btn-primary btn-sm" style="margin-top:.5rem">
+      ↓ Download system-accounts.csv
+    </a>
+  </div>
+
+</div>
+<%- include('partials/footer') %>

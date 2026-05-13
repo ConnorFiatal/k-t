@@ -1,0 +1,152 @@
+<%- include('partials/header') %>
+<div class="page-header">
+  <h1>CSV Import</h1>
+</div>
+<p class="text-muted" style="margin-bottom:1.5rem">
+  Upload CSV files to bulk-import data. Download a template for each entity, fill it out, then upload.
+  Existing records are skipped automatically.
+</p>
+
+<div class="import-grid">
+
+  <!-- DOORS -->
+  <div class="import-card" id="card-doors">
+    <h2>Doors</h2>
+    <div class="card-sub">Adds physical door entries. Existing doors with the same name are skipped.</div>
+    <div class="col-hint">name*, building, floor, room, description, door_type (KEYED/FOB/BOTH)*</div>
+    <div class="template-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <a href="/import/template/doors">Download template</a>
+    </div>
+    <form class="import-form" data-entity="doors">
+      <div class="file-row">
+        <input type="file" accept=".csv" required />
+        <button type="submit" class="btn btn-primary btn-sm">Import</button>
+      </div>
+      <div class="result-box"></div>
+    </form>
+  </div>
+
+  <!-- KEYS -->
+  <div class="import-card" id="card-keys">
+    <h2>Keys</h2>
+    <div class="card-sub">Imports individual keys. Key system is created if it doesn't exist. Parent key must already exist if specified.</div>
+    <div class="col-hint">key_number*, system_name*, level (GMK/MK/SUB_MASTER/CHANGE), parent_key_number, bitting, keyway, key_blank, notes</div>
+    <div class="template-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <a href="/import/template/keys">Download template</a>
+    </div>
+    <form class="import-form" data-entity="keys">
+      <div class="file-row">
+        <input type="file" accept=".csv" required />
+        <button type="submit" class="btn btn-primary btn-sm">Import</button>
+      </div>
+      <div class="result-box"></div>
+    </form>
+  </div>
+
+  <!-- USERS / STAFF -->
+  <div class="import-card" id="card-users">
+    <h2>Users (Staff)</h2>
+    <div class="card-sub">Imports staff members. Duplicates matched by employee_id (if provided) or first + last name.</div>
+    <div class="col-hint">first_name*, last_name*, employee_id, department, title, email, phone, start_date, notes</div>
+    <div class="template-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <a href="/import/template/users">Download template</a>
+    </div>
+    <form class="import-form" data-entity="users">
+      <div class="file-row">
+        <input type="file" accept=".csv" required />
+        <button type="submit" class="btn btn-primary btn-sm">Import</button>
+      </div>
+      <div class="result-box"></div>
+    </form>
+  </div>
+
+  <!-- COMBINATIONS -->
+  <div class="import-card" id="card-combinations">
+    <h2>Combinations (Key → Door)</h2>
+    <div class="card-sub">Links keys to the doors they unlock. Import Doors and Keys first. Include system_name to disambiguate keys.</div>
+    <div class="col-hint">key_number*, system_name (recommended), door_name*</div>
+    <div class="template-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <a href="/import/template/combinations">Download template</a>
+    </div>
+    <form class="import-form" data-entity="combinations">
+      <div class="file-row">
+        <input type="file" accept=".csv" required />
+        <button type="submit" class="btn btn-primary btn-sm">Import</button>
+      </div>
+      <div class="result-box"></div>
+    </form>
+  </div>
+
+  <!-- SYSTEM ACCOUNTS -->
+  <div class="import-card" id="card-system-accounts">
+    <h2>System Accounts</h2>
+    <div class="card-sub">Imports system/application credentials. Duplicates matched by account_name + username pair.</div>
+    <div class="col-hint">account_name*, username*, password, url, access_level, notes</div>
+    <div class="template-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <a href="/import/template/system-accounts">Download template</a>
+    </div>
+    <form class="import-form" data-entity="system-accounts">
+      <div class="file-row">
+        <input type="file" accept=".csv" required />
+        <button type="submit" class="btn btn-primary btn-sm">Import</button>
+      </div>
+      <div class="result-box"></div>
+    </form>
+  </div>
+
+</div>
+
+<script>
+document.querySelectorAll('.import-form').forEach(form => {
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const entity    = form.dataset.entity;
+    const fileInput = form.querySelector('input[type="file"]');
+    const btn       = form.querySelector('button[type="submit"]');
+    const box       = form.querySelector('.result-box');
+    if (!fileInput.files.length) return;
+
+    btn.disabled  = true;
+    const origText = btn.textContent;
+    btn.textContent = 'Importing…';
+    box.className   = 'result-box';
+    box.innerHTML   = '';
+
+    const fd = new FormData();
+    fd.append('file', fileInput.files[0]);
+    try {
+      const resp = await fetch(`/import/${entity}`, { method: 'POST', body: fd });
+      const data = await resp.json();
+      if (data.error) {
+        box.className = 'result-box err show';
+        box.innerHTML = `<div class="summary">Error</div>${escHtml(data.error)}`;
+        return;
+      }
+      const hasErrors = data.failed > 0;
+      box.className = `result-box ${hasErrors ? 'err' : 'ok'} show`;
+      let html = `<div class="summary">${escHtml(data.entity)}: ${data.inserted} inserted, ${data.skipped} skipped, ${data.failed} failed</div>`;
+      if (data.errors && data.errors.length) {
+        html += '<ul>' + data.errors.map(e => `<li>${escHtml(e)}</li>`).join('') + '</ul>';
+      }
+      box.innerHTML = html;
+      if (!hasErrors) fileInput.value = '';
+    } catch (err) {
+      box.className = 'result-box err show';
+      box.innerHTML = `<div class="summary">Network error</div>${escHtml(err.message)}`;
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = origText;
+    }
+  });
+});
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+<%- include('partials/footer') %>

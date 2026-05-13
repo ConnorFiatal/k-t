@@ -1,0 +1,76 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1><%= title %></h1>
+  <a href="/physical-keys<%= pk ? '/' + pk.id : '' %>" class="btn btn-ghost">← Cancel</a>
+</div>
+
+<div class="card card-form">
+  <form action="<%= action %>" method="POST" enctype="multipart/form-data">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="stamp_number">Stamp Number <span class="required">*</span></label>
+        <input type="text" id="stamp_number" name="stamp_number" required
+               value="<%= pk ? pk.stamp_number : '' %>" placeholder="e.g. K2024-001">
+        <div class="form-hint">The physical number stamped on or engraved into the key</div>
+      </div>
+      <div class="form-group">
+        <label for="key_type_id">Key Type <span class="required">*</span></label>
+        <select id="key_type_id" name="key_type_id" required>
+          <option value="">— Select key type —</option>
+          <% allKeys.forEach(k => { %>
+            <option value="<%= k.id %>" <%= pk && pk.key_type_id == k.id ? 'selected' : '' %>>
+              <%= k.key_number %> — <%= k.system_name %> (<%= k.level %>)
+            </option>
+          <% }) %>
+        </select>
+        <div class="form-hint">The key type this copy belongs to (from the key system)</div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="keytrak_ring_id">KeyTrak Ring</label>
+        <select id="keytrak_ring_id" name="keytrak_ring_id">
+          <option value="">— Unassigned —</option>
+          <% keyrings.forEach(r => { %>
+            <option value="<%= r.id %>" <%= pk && pk.keytrak_ring_id == r.id ? 'selected' : '' %>>
+              Ring <%= r.ring_number %><%= r.description ? ' — ' + r.description : '' %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="expiry_date">Expiry Date</label>
+        <input type="date" id="expiry_date" name="expiry_date"
+               value="<%= pk ? (pk.expiry_date || '') : '' %>">
+        <div class="form-hint">Required for contractors and temporary staff</div>
+      </div>
+    </div>
+
+    <% if (!pk) { %>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="transaction_date">Date Received from Locksmith</label>
+        <input type="date" id="transaction_date" name="transaction_date"
+               value="<%= new Date().toISOString().split('T')[0] %>">
+      </div>
+      <div class="form-group">
+        <label for="receipt">Locksmith Receipt (optional)</label>
+        <input type="file" id="receipt" name="receipt" accept=".pdf,.png,.jpg,.jpeg">
+        <div class="form-hint">PDF or image of the receipt/invoice from the locksmith</div>
+      </div>
+    </div>
+    <% } %>
+
+    <div class="form-group">
+      <label for="notes">Notes</label>
+      <textarea id="notes" name="notes" rows="3"><%= pk ? (pk.notes || '') : '' %></textarea>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary"><%= pk ? 'Save Changes' : 'Add Key Copy' %></button>
+      <a href="/physical-keys<%= pk ? '/' + pk.id : '' %>" class="btn btn-ghost">Cancel</a>
+    </div>
+  </form>
+</div>
+<%- include('../partials/footer') %>

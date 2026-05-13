@@ -27,8 +27,8 @@ function parseCSV(buffer) {
   });
 }
 
-// ── GET /import  ─ redirect to static page ─────────────────────────────────
-router.get('/', (req, res) => res.redirect('/import.html'));
+// ── GET /import  ─ render the import page (behind requireLogin) ────────────
+router.get('/', (req, res) => res.render('import', { title: 'CSV Import' }));
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TEMPLATE DOWNLOADS

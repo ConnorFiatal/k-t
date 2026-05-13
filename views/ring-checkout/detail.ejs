@@ -1,0 +1,167 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <div>
+    <h1>Ring <%= ring.ring_number %>
+      <% if (ring.holder_id) { %>
+        <span class="badge badge-orange badge-lg">Checked Out</span>
+      <% } else { %>
+        <span class="badge badge-green badge-lg">Available</span>
+      <% } %>
+    </h1>
+    <p class="text-muted"><%= ring.description || '' %><%= ring.location ? ' · ' + ring.location : '' %></p>
+  </div>
+  <div class="btn-group no-print">
+    <a href="/keytrak/<%= ring.id %>" class="btn btn-outline">Full Ring Management</a>
+    <a href="/ring-checkout" class="btn btn-ghost">← Back</a>
+  </div>
+</div>
+
+<div class="detail-grid">
+  <!-- Left: ring info + checkout actions -->
+  <div>
+    <div class="card">
+      <div class="card-header"><h2>Ring Details</h2></div>
+      <table class="info-table">
+        <tr><th>Ring #</th><td><%= ring.ring_number %></td></tr>
+        <tr><th>Description</th><td><%= ring.description || '—' %></td></tr>
+        <tr><th>Location</th><td><%= ring.location || '—' %></td></tr>
+        <tr><th>Current Holder</th><td>
+          <% if (ring.holder_id) { %>
+            <a href="/staff/<%= ring.holder_id %>"><strong><%= ring.holder_last %>, <%= ring.holder_first %></strong></a>
+            <% if (ring.holder_dept) { %><span class="text-muted"> · <%= ring.holder_dept %></span><% } %>
+          <% } else { %>
+            <span class="text-muted">Not checked out</span>
+          <% } %>
+        </td></tr>
+        <% if (ring.checked_out_date) { %>
+        <tr><th>Since</th><td class="text-muted"><%= ring.checked_out_date %></td></tr>
+        <% } %>
+        <% if (ring.checked_out_notes) { %>
+        <tr><th>Notes</th><td class="text-muted"><%= ring.checked_out_notes %></td></tr>
+        <% } %>
+      </table>
+    </div>
+
+    <!-- CHECK OUT / CHECK IN -->
+    <div class="card no-print">
+      <% if (!ring.holder_id) { %>
+      <div class="card-header"><h2>Check Out Ring</h2></div>
+      <div class="card-section">
+        <form action="/ring-checkout/<%= ring.id %>/checkout" method="POST">
+          <div class="form-group">
+            <label>Check Out To <span class="required">*</span></label>
+            <select name="staff_id" required>
+              <option value="">— Select staff member —</option>
+              <% activeStaff.forEach(s => { %>
+                <option value="<%= s.id %>"><%= s.last_name %>, <%= s.first_name %><%= s.department ? ` (${s.department})` : '' %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <input type="text" name="notes" placeholder="Reason / purpose…">
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Check Out Ring</button>
+          </div>
+        </form>
+      </div>
+      <% } else { %>
+      <div class="card-header"><h2>Check In Ring</h2></div>
+      <div class="card-section">
+        <p class="text-muted" style="margin-bottom:1rem">
+          Return ring from <strong><%= ring.holder_first %> <%= ring.holder_last %></strong>
+          (checked out <%= ring.checked_out_date %>)
+        </p>
+        <form action="/ring-checkout/<%= ring.id %>/checkin" method="POST">
+          <div class="form-group">
+            <label>Condition Notes</label>
+            <input type="text" name="condition_notes" placeholder="Condition on return, any issues…">
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary"
+              onclick="return confirm('Confirm return of ring <%= ring.ring_number %> from <%= ring.holder_first %> <%= ring.holder_last %>?')">
+              Check In Ring
+            </button>
+          </div>
+        </form>
+      </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Right: physical keys + key types + history -->
+  <div>
+    <!-- Physical key copies on this ring -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Physical Key Copies <span class="count-badge"><%= physicalKeys.length %></span></h2>
+        <a href="/physical-keys/new" class="btn btn-sm btn-outline no-print">+ Add Copy</a>
+      </div>
+      <% if (physicalKeys.length === 0) { %>
+        <p class="empty-state-sm">No physical key copies assigned to this ring.</p>
+      <% } else { %>
+      <table class="table table-sm">
+        <thead><tr><th>Stamp #</th><th>Key #</th><th>System</th><th>Status</th><th>Holder</th></tr></thead>
+        <tbody>
+          <% physicalKeys.forEach(k => { %>
+          <tr>
+            <td><a href="/physical-keys/<%= k.id %>"><strong><%= k.stamp_number %></strong></a></td>
+            <td class="text-muted"><%= k.key_number %></td>
+            <td class="text-muted"><%= k.system_name %></td>
+            <td><span class="badge badge-pk-<%= k.status %>"><%= k.status %></span></td>
+            <td class="text-muted text-sm">
+              <% if (k.holder_first) { %><%= k.holder_last %>, <%= k.holder_first %><% } else { %>—<% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+
+    <!-- Key types (logical) on this ring -->
+    <div class="card">
+      <div class="card-header"><h2>Key Types on Ring <span class="count-badge"><%= keyTypes.length %></span></h2></div>
+      <% if (keyTypes.length === 0) { %>
+        <p class="empty-state-sm">No key types assigned. <a href="/keytrak/<%= ring.id %>">Manage via KeyTrak.</a></p>
+      <% } else { %>
+      <table class="table table-sm">
+        <thead><tr><th>Key #</th><th>System</th><th>Level</th><th>Assigned</th></tr></thead>
+        <tbody>
+          <% keyTypes.forEach(k => { %>
+          <tr>
+            <td><%= k.key_number %></td>
+            <td class="text-muted"><%= k.system_name %></td>
+            <td><span class="badge badge-level-<%= (k.level||'change').toLowerCase() %>"><%= k.level %></span></td>
+            <td class="text-muted text-sm"><%= k.assigned_at %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+
+    <!-- Recent checkout history -->
+    <% if (checkoutHistory.length > 0) { %>
+    <div class="card">
+      <div class="card-header"><h2>Recent Activity</h2></div>
+      <table class="table table-sm">
+        <thead><tr><th>Date</th><th>Type</th><th>Stamp</th><th>Person</th><th>By</th></tr></thead>
+        <tbody>
+          <% checkoutHistory.forEach(h => { %>
+          <tr>
+            <td class="text-muted text-sm"><%= h.transaction_date %></td>
+            <td><span class="badge badge-tx-<%= h.transaction_type.replace(/_/g,'-') %> badge-sm"><%= h.transaction_type.replace(/_/g,' ') %></span></td>
+            <td><a href="/physical-keys/<%= h.physical_key_id %>"><%= h.stamp_number %></a></td>
+            <td class="text-muted"><%= h.first_name ? `${h.last_name}, ${h.first_name}` : '—' %></td>
+            <td class="text-muted text-sm"><%= h.performed_by %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials/footer') %>

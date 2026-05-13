@@ -1,0 +1,75 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Report: Expiring Keys</h1>
+  <div class="btn-group">
+    <button onclick="window.print()" class="btn btn-outline no-print">Print</button>
+    <a href="/reports/keys/expiring.csv" class="btn btn-outline no-print">↓ CSV</a>
+    <a href="/reports/keys" class="btn btn-ghost no-print">← Reports</a>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:1rem">
+  <form class="filter-bar no-print" method="GET" action="/reports/keys/expiring">
+    <select name="days">
+      <option value="7"  <%= filters.days === '7'  ? 'selected' : '' %>>Next 7 days</option>
+      <option value="30" <%= filters.days === '30' ? 'selected' : '' %>>Next 30 days</option>
+      <option value="90" <%= filters.days === '90' ? 'selected' : '' %>>Next 90 days</option>
+    </select>
+    <button type="submit" class="btn btn-outline">Filter</button>
+  </form>
+</div>
+
+<% if (overdueRows.length > 0) { %>
+<h2 class="section-heading" style="margin-bottom:.5rem; color: var(--red)">⚠ Overdue — Past Expiry (<%= overdueRows.length %>)</h2>
+<div class="card" style="margin-bottom:1.5rem">
+  <table class="table">
+    <thead><tr><th>Stamp #</th><th>Key Type</th><th>System</th><th>Holder</th><th>Issued</th><th>Expired</th><th>Ring</th><th></th></tr></thead>
+    <tbody>
+      <% overdueRows.forEach(r => { %>
+      <tr class="row-overdue">
+        <td><a href="/physical-keys/<%= r.id %>"><strong><%= r.stamp_number %></strong></a></td>
+        <td class="text-muted"><%= r.key_number %></td>
+        <td class="text-muted"><%= r.system_name %></td>
+        <td>
+          <% if (r.first_name) { %><a href="/staff/<%= r.staff_id %>"><%= r.last_name %>, <%= r.first_name %></a>
+          <% if (r.email) { %><a href="mailto:<%= r.email %>" class="text-sm text-muted ml-1" title="<%= r.email %>">✉</a><% } %>
+          <% } else { %><span class="text-muted">—</span><% } %>
+        </td>
+        <td class="text-muted"><%= r.issued_date || '—' %></td>
+        <td class="text-danger"><strong><%= r.expiry_date %></strong></td>
+        <td class="text-muted"><%= r.ring_number || '—' %></td>
+        <td class="no-print"><a href="/key-agreements/<%= r.agreement_id %>" class="btn btn-sm btn-ghost">Agreement</a></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+<h2 class="section-heading" style="margin-bottom:.5rem">Expiring Within <%= filters.days %> Days (<%= rows.length %>)</h2>
+<% if (rows.length === 0) { %>
+  <div class="card"><p class="empty-state">No keys expiring within <%= filters.days %> days.</p></div>
+<% } else { %>
+<div class="card">
+  <table class="table">
+    <thead><tr><th>Stamp #</th><th>Key Type</th><th>System</th><th>Holder</th><th>Issued</th><th>Expires</th><th>Ring</th><th></th></tr></thead>
+    <tbody>
+      <% rows.forEach(r => { %>
+      <tr class="row-expiring">
+        <td><a href="/physical-keys/<%= r.id %>"><strong><%= r.stamp_number %></strong></a></td>
+        <td class="text-muted"><%= r.key_number %></td>
+        <td class="text-muted"><%= r.system_name %></td>
+        <td>
+          <% if (r.first_name) { %><a href="/staff/<%= r.staff_id %>"><%= r.last_name %>, <%= r.first_name %></a><% } else { %><span class="text-muted">—</span><% } %>
+        </td>
+        <td class="text-muted"><%= r.issued_date || '—' %></td>
+        <td class="text-warning"><strong><%= r.expiry_date %></strong></td>
+        <td class="text-muted"><%= r.ring_number || '—' %></td>
+        <td class="no-print"><a href="/key-agreements/<%= r.agreement_id %>" class="btn btn-sm btn-ghost">Agreement</a></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+<%- include('../partials/footer') %>

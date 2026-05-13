@@ -1,3 +1,19 @@
 ◇ injected env (7) from .env // tip: ⌘ suppress logs { quiet: true }
 KeyDog running at http://localhost:3000
 Default login: admin / admin123 (change this immediately)
+[email] SMTP not configured. Would have sent "[KeyDog] Test email — welcome" to test@example.com
+[email] Template: welcome {
+  appName: 'KeyDog',
+  appUrl: 'http://localhost:3000',
+  year: 2026,
+  username: 'admin',
+  loginUrl: 'http://localhost:3000/login',
+  createdBy: 'admin',
+  staffName: 'Test Staff',
+  keyNumber: 'TEST-01',
+  systemName: 'Test System',
+  ringNumber: 'RING-01',
+  assignedBy: 'admin',
+  removedBy: 'admin',
+  date: '5/12/2026'
+}

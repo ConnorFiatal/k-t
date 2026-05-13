@@ -1,0 +1,85 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <div>
+    <h1>Key Agreements</h1>
+    <p class="text-muted">Issuance records and acknowledgments for physical key copies.</p>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:1rem">
+  <form class="filter-bar no-print" method="GET" action="/key-agreements">
+    <select name="status">
+      <option value="active"    <%= filters.status === 'active'    ? 'selected' : '' %>>Active (Not Returned)</option>
+      <option value="returned"  <%= filters.status === 'returned'  ? 'selected' : '' %>>Returned</option>
+      <option value="all"       <%= filters.status === 'all'       ? 'selected' : '' %>>All</option>
+    </select>
+    <select name="staff_id">
+      <option value="">All Staff</option>
+      <% allStaff.forEach(s => { %>
+        <option value="<%= s.id %>" <%= filters.staff_id == s.id ? 'selected' : '' %>><%= s.last_name %>, <%= s.first_name %></option>
+      <% }) %>
+    </select>
+    <button type="submit" class="btn btn-outline">Filter</button>
+    <a href="/key-agreements" class="btn btn-ghost">Reset</a>
+  </form>
+</div>
+
+<p class="report-count"><%= agreements.length %> agreement<%= agreements.length !== 1 ? 's' : '' %></p>
+
+<% if (agreements.length === 0) { %>
+  <div class="card"><p class="empty-state">No agreements found.</p></div>
+<% } else { %>
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Stamp #</th>
+        <th>Key Type</th>
+        <th>System</th>
+        <th>Holder</th>
+        <th>Department</th>
+        <th>Issued</th>
+        <th>Expiry</th>
+        <th>Returned</th>
+        <th>Signed</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% agreements.forEach(a => { %>
+      <tr class="<%= a.isOverdue ? 'row-overdue' : '' %> <%= !a.returned_date && a.staff_status === 'terminated' ? 'row-terminated' : '' %>">
+        <td><a href="/physical-keys/<%= a.physical_key_id %>"><strong><%= a.stamp_number %></strong></a></td>
+        <td class="text-muted"><%= a.key_number %></td>
+        <td class="text-muted"><%= a.system_name %></td>
+        <td>
+          <a href="/staff/<%= a.staff_id %>"><%= a.last_name %>, <%= a.first_name %></a>
+          <% if (a.staff_status === 'terminated') { %><span class="badge badge-red badge-sm">terminated</span><% } %>
+        </td>
+        <td class="text-muted"><%= a.department || '—' %></td>
+        <td><%= a.issued_date %></td>
+        <td>
+          <% if (a.expiry_date) { %>
+            <span class="<%= a.isOverdue ? 'text-danger' : '' %>">
+              <%= a.expiry_date %>
+              <% if (a.isOverdue) { %><span class="badge badge-red badge-sm">overdue</span><% } %>
+            </span>
+          <% } else { %><span class="text-muted">—</span><% } %>
+        </td>
+        <td>
+          <% if (a.returned_date) { %><%= a.returned_date %><% } else { %><span class="text-muted">Outstanding</span><% } %>
+        </td>
+        <td>
+          <% if (a.signed_agreement_filename) { %>
+            <a href="/uploads/agreements/<%= a.signed_agreement_filename %>" target="_blank" title="View signed copy">📎</a>
+          <% } else { %><span class="text-muted">—</span><% } %>
+        </td>
+        <td class="text-right">
+          <a href="/key-agreements/<%= a.id %>" class="btn btn-sm btn-outline">View</a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+<%- include('../partials/footer') %>

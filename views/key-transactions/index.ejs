@@ -1,0 +1,337 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Key Transactions</h1>
+  <a href="/physical-keys" class="btn btn-ghost no-print">← Physical Keys</a>
+</div>
+
+<p class="text-muted" style="margin-bottom:1.5rem">
+  Record a key lifecycle event. Every transaction is date/time stamped and attributed to the currently logged-in user (<strong><%= user.username %></strong>).
+</p>
+
+<!-- Transaction type tabs -->
+<div class="tx-tabs no-print" id="txTabs">
+  <button class="tx-tab active" data-target="tab-locksmith">📦 From Locksmith</button>
+  <button class="tx-tab" data-target="tab-issue">👤 Issue to Person</button>
+  <button class="tx-tab" data-target="tab-return">↩ Return</button>
+  <button class="tx-tab" data-target="tab-lost">🔴 Lost</button>
+  <button class="tx-tab" data-target="tab-damage">⚠ Damaged / Destroyed</button>
+  <button class="tx-tab" data-target="tab-replace">🔄 Replaced</button>
+</div>
+
+<!-- ── 1. Issued from Locksmith ─────────────────────────────────────────── -->
+<div class="tx-panel card" id="tab-locksmith">
+  <div class="card-header"><h2>📦 Issued from Locksmith</h2></div>
+  <div class="card-section">
+    <p class="text-muted" style="margin-bottom:1rem">Create a new physical key copy record when you receive a new key from the locksmith. Optionally attach the receipt/invoice.</p>
+    <form action="/key-transactions/issued-from-locksmith" method="POST" enctype="multipart/form-data">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Stamp Number <span class="required">*</span></label>
+          <input type="text" name="stamp_number" required placeholder="e.g. K2024-042">
+        </div>
+        <div class="form-group">
+          <label>Key Type <span class="required">*</span></label>
+          <select name="key_type_id" required>
+            <option value="">— Select key type —</option>
+            <% allKeys.forEach(k => { %>
+              <option value="<%= k.id %>"><%= k.key_number %> — <%= k.system_name %> (<%= k.level %>)</option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Assign to KeyTrak Ring</label>
+          <select name="keytrak_ring_id">
+            <option value="">— Unassigned —</option>
+            <% keyrings.forEach(r => { %>
+              <option value="<%= r.id %>">Ring <%= r.ring_number %><%= r.description ? ' — ' + r.description : '' %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Date Received</label>
+          <input type="date" name="transaction_date" value="<%= new Date().toISOString().split('T')[0] %>">
+        </div>
+        <div class="form-group">
+          <label>Locksmith Receipt</label>
+          <input type="file" name="receipt" accept=".pdf,.png,.jpg,.jpeg">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <input type="text" name="notes" placeholder="Locksmith name, work order #, etc.">
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Record Receipt from Locksmith</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── 2. Issue to Person ───────────────────────────────────────────────── -->
+<div class="tx-panel card hidden" id="tab-issue">
+  <div class="card-header"><h2>👤 Issued to Person</h2></div>
+  <div class="card-section">
+    <p class="text-muted" style="margin-bottom:1rem">Issue an existing key copy to a staff member. A key agreement will be generated and must be printed and signed.</p>
+    <form action="/key-transactions/issued-to-person" method="POST">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Physical Key Copy <span class="required">*</span></label>
+          <select name="physical_key_id" required>
+            <option value="">— Select key copy —</option>
+            <% activePhysicalKeys.filter(k => !issuedKeys.find(ik => ik.id === k.id)).forEach(k => { %>
+              <option value="<%= k.id %>"><%= k.stamp_number %> — <%= k.key_number %> (<%= k.system_name %>)</option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Staff Member <span class="required">*</span></label>
+          <select name="staff_id" required>
+            <option value="">— Select staff —</option>
+            <% activeStaff.forEach(s => { %>
+              <option value="<%= s.id %>"><%= s.last_name %>, <%= s.first_name %><%= s.department ? ` (${s.department})` : '' %></option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Issue Date <span class="required">*</span></label>
+          <input type="date" name="issued_date" required value="<%= new Date().toISOString().split('T')[0] %>">
+        </div>
+        <div class="form-group">
+          <label>Expiry Date <span class="text-muted">(contractors/temp staff)</span></label>
+          <input type="date" name="expiry_date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <input type="text" name="notes" placeholder="Purpose, project, etc.">
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Issue Key & Create Agreement</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── 3. Return ────────────────────────────────────────────────────────── -->
+<div class="tx-panel card hidden" id="tab-return">
+  <div class="card-header"><h2>↩ Returned</h2></div>
+  <div class="card-section">
+    <p class="text-muted" style="margin-bottom:1rem">Record the return of a key copy from a staff member.</p>
+    <form action="/key-transactions/returned" method="POST">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Physical Key Copy <span class="required">*</span></label>
+          <select name="physical_key_id" required>
+            <option value="">— Select issued key —</option>
+            <% issuedKeys.forEach(k => { %>
+              <option value="<%= k.id %>"><%= k.stamp_number %> — <%= k.key_number %> (held by <%= k.last_name %>, <%= k.first_name %>)</option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Return Date <span class="required">*</span></label>
+          <input type="date" name="returned_date" required value="<%= new Date().toISOString().split('T')[0] %>">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Condition</label>
+          <select name="condition">
+            <option value="">Good condition</option>
+            <option value="Worn">Worn</option>
+            <option value="Minor damage">Minor damage</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <input type="text" name="notes" placeholder="Any notes on return…">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Record Return</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── 4. Lost ──────────────────────────────────────────────────────────── -->
+<div class="tx-panel card hidden" id="tab-lost">
+  <div class="card-header"><h2>🔴 Lost</h2></div>
+  <div class="card-section">
+    <p class="text-muted" style="margin-bottom:1rem">Record a key copy as lost. The key status will be permanently changed to <em>lost</em>.</p>
+    <form action="/key-transactions/lost" method="POST">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Physical Key Copy <span class="required">*</span></label>
+          <select name="physical_key_id" required>
+            <option value="">— Select key copy —</option>
+            <% activePhysicalKeys.forEach(k => { %>
+              <option value="<%= k.id %>"><%= k.stamp_number %> — <%= k.key_number %> (<%= k.system_name %>)</option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Date Lost</label>
+          <input type="date" name="lost_date" value="<%= new Date().toISOString().split('T')[0] %>">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Police / Incident Report #</label>
+          <input type="text" name="report_number" placeholder="Optional reference number">
+        </div>
+        <div class="form-group">
+          <label>Notes <span class="required">*</span></label>
+          <input type="text" name="notes" required placeholder="Circumstances of loss…">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-danger" onclick="return confirm('Mark key as LOST? This cannot be undone.')">Confirm Lost</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── 5. Damaged / Destroyed ──────────────────────────────────────────── -->
+<div class="tx-panel card hidden" id="tab-damage">
+  <div class="card-header"><h2>⚠ Damaged / Destroyed</h2></div>
+  <div class="card-section">
+    <form action="/key-transactions/damaged-destroyed" method="POST">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Physical Key Copy <span class="required">*</span></label>
+          <select name="physical_key_id" required>
+            <option value="">— Select key copy —</option>
+            <% activePhysicalKeys.forEach(k => { %>
+              <option value="<%= k.id %>"><%= k.stamp_number %> — <%= k.key_number %> (<%= k.system_name %>)</option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status to Apply <span class="required">*</span></label>
+          <select name="status_type" required>
+            <option value="damaged">Damaged</option>
+            <option value="destroyed">Destroyed</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" name="event_date" value="<%= new Date().toISOString().split('T')[0] %>">
+        </div>
+        <div class="form-group">
+          <label>Witness Name</label>
+          <input type="text" name="witness" placeholder="Full name of witness (optional)">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notes <span class="required">*</span></label>
+        <textarea name="notes" rows="2" required placeholder="Description of damage or how the key was destroyed…"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-danger" onclick="return confirm('Record damage/destruction? This changes the key status permanently.')">Confirm</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── 6. Replaced by Locksmith ────────────────────────────────────────── -->
+<div class="tx-panel card hidden" id="tab-replace">
+  <div class="card-header"><h2>🔄 Replaced by Locksmith</h2></div>
+  <div class="card-section">
+    <p class="text-muted" style="margin-bottom:1rem">Record a key replacement. The old key is marked <em>destroyed</em> and a new key copy is created with the same type.</p>
+    <form action="/key-transactions/replaced" method="POST" enctype="multipart/form-data">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Old Key Copy <span class="required">*</span></label>
+          <select name="old_key_id" required>
+            <option value="">— Select old key —</option>
+            <% [...activePhysicalKeys, ...nonActiveKeys].forEach(k => { %>
+              <option value="<%= k.id %>"><%= k.stamp_number %> — <%= k.key_number %> (<%= k.system_name %>) [<%= k.status %>]</option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>New Stamp Number <span class="required">*</span></label>
+          <input type="text" name="new_stamp_number" required placeholder="e.g. K2024-043">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" name="transaction_date" value="<%= new Date().toISOString().split('T')[0] %>">
+        </div>
+        <div class="form-group">
+          <label>Locksmith Receipt</label>
+          <input type="file" name="receipt" accept=".pdf,.png,.jpg,.jpeg">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <input type="text" name="notes" placeholder="Reason for replacement, locksmith name, etc.">
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Record Replacement</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Recent transactions -->
+<div class="card" style="margin-top:2rem">
+  <div class="card-header">
+    <h2>Recent Transactions <span class="count-badge"><%= recent.length %></span></h2>
+    <a href="/reports/keys/audit-log" class="btn btn-sm btn-ghost no-print">Full Audit Log →</a>
+  </div>
+  <% if (recent.length === 0) { %>
+    <p class="empty-state-sm">No transactions recorded yet.</p>
+  <% } else { %>
+  <table class="table table-sm">
+    <thead><tr><th>Date/Time</th><th>Type</th><th>Key</th><th>Person</th><th>By</th><th>Receipt</th></tr></thead>
+    <tbody>
+      <% recent.forEach(t => { %>
+      <tr>
+        <td class="text-muted text-sm"><%= t.transaction_date %></td>
+        <td><span class="badge badge-tx-<%= t.transaction_type.replace(/_/g,'-') %>"><%= t.transaction_type.replace(/_/g,' ') %></span></td>
+        <td><a href="/physical-keys/<%= t.physical_key_id %>"><%= t.stamp_number %></a></td>
+        <td class="text-muted"><%= t.first_name ? `${t.last_name}, ${t.first_name}` : '—' %></td>
+        <td class="text-muted text-sm"><%= t.performed_by %></td>
+        <td>
+          <% if (t.receipt_filename) { %>
+            <a href="/uploads/receipts/<%= t.receipt_filename %>" target="_blank" class="text-sm">📎</a>
+          <% } else { %>—<% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<script>
+(function() {
+  const tabs = document.querySelectorAll('.tx-tab');
+  const panels = document.querySelectorAll('.tx-panel');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      panels.forEach(p => p.classList.add('hidden'));
+      tab.classList.add('active');
+      const target = document.getElementById(tab.dataset.target);
+      if (target) target.classList.remove('hidden');
+    });
+  });
+  // If URL hash matches a tab target, activate it
+  const hash = window.location.hash.slice(1);
+  if (hash) {
+    const tab = document.querySelector(`.tx-tab[data-target="${hash}"]`);
+    if (tab) tab.click();
+  }
+})();
+</script>
+<%- include('../partials/footer') %>

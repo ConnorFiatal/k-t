@@ -1,0 +1,220 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <div>
+    <h1>Add Key Batch</h1>
+    <p class="text-muted">Record a series of key copies from a single locksmith transaction.</p>
+  </div>
+  <a href="/physical-keys" class="btn btn-ghost">← Cancel</a>
+</div>
+
+<form action="/physical-keys/batch" method="POST" enctype="multipart/form-data" id="batchForm">
+  <input type="hidden" name="mode" id="modeInput" value="range">
+
+  <!-- ── Mode selector ───────────────────────────────────────────────────── -->
+  <div class="card" style="margin-bottom:1rem;">
+    <div class="batch-mode-tabs">
+      <button type="button" class="batch-mode-tab active" data-mode="range" id="tabRange">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+        Range (e.g. #7 – #13)
+      </button>
+      <button type="button" class="batch-mode-tab" data-mode="list" id="tabList">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 5h6"/></svg>
+        List (enter each stamp)
+      </button>
+    </div>
+
+    <!-- Range panel -->
+    <div id="panelRange" class="batch-panel">
+      <div class="form-row" style="align-items:flex-end;">
+        <div class="form-group" style="flex:1 1 200px;">
+          <label for="prefix">Stamp Prefix <span class="text-muted" style="font-weight:400;">(optional)</span></label>
+          <input type="text" id="prefix" name="prefix" placeholder="e.g. K" oninput="updatePreview()">
+          <div class="form-hint">Text prepended before the number (leave blank for numbers only)</div>
+        </div>
+        <div class="form-group" style="flex:0 1 140px;">
+          <label for="start_num">From # <span class="required">*</span></label>
+          <input type="text" id="start_num" name="start_num" placeholder="007" oninput="updatePreview()" autocomplete="off">
+          <div class="form-hint">Leading zeros set padding</div>
+        </div>
+        <div class="form-group" style="flex:0 1 140px;">
+          <label for="end_num">To # <span class="required">*</span></label>
+          <input type="text" id="end_num" name="end_num" placeholder="013" oninput="updatePreview()" autocomplete="off">
+        </div>
+      </div>
+
+      <!-- Live preview -->
+      <div class="batch-preview" id="batchPreview">
+        <div class="batch-preview-label">Preview — <span id="previewCount">0 keys</span></div>
+        <div class="batch-preview-stamps" id="previewStamps">Enter a range above to preview stamp numbers.</div>
+        <div class="batch-preview-warn" id="previewWarn" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- List panel -->
+    <div id="panelList" class="batch-panel" style="display:none;">
+      <div class="form-group">
+        <label for="stamp_list">Stamp Numbers <span class="required">*</span></label>
+        <textarea id="stamp_list" name="stamp_list" rows="8"
+                  placeholder="Enter one stamp number per line, e.g.:&#10;K-007&#10;K-008&#10;K-009" oninput="updateListPreview()"></textarea>
+        <div class="form-hint">One stamp number per line. Blank lines and leading/trailing spaces are ignored.</div>
+      </div>
+      <div class="batch-preview" id="listPreview">
+        <div class="batch-preview-label">Preview — <span id="listPreviewCount">0 keys</span></div>
+        <div class="batch-preview-stamps" id="listPreviewStamps">Enter stamps above to preview.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Shared fields ───────────────────────────────────────────────────── -->
+  <div class="card card-form">
+    <h3 style="margin:0 0 1.25rem;font-size:.95rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Locksmith Transaction Details</h3>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="key_type_id">Key Type <span class="required">*</span></label>
+        <select id="key_type_id" name="key_type_id" required>
+          <option value="">— Select key type —</option>
+          <% allKeys.forEach(k => { %>
+            <option value="<%= k.id %>"><%= k.key_number %> — <%= k.system_name %> (<%= k.level %>)</option>
+          <% }) %>
+        </select>
+        <div class="form-hint">All keys in this batch belong to the same key type</div>
+      </div>
+      <div class="form-group">
+        <label for="keytrak_ring_id">KeyTrak Ring</label>
+        <select id="keytrak_ring_id" name="keytrak_ring_id">
+          <option value="">— Unassigned —</option>
+          <% keyrings.forEach(r => { %>
+            <option value="<%= r.id %>">Ring <%= r.ring_number %><%= r.description ? ' — ' + r.description : '' %></option>
+          <% }) %>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="transaction_date">Date Received from Locksmith</label>
+        <input type="date" id="transaction_date" name="transaction_date"
+               value="<%= new Date().toISOString().split('T')[0] %>">
+      </div>
+      <div class="form-group">
+        <label for="expiry_date">Expiry Date</label>
+        <input type="date" id="expiry_date" name="expiry_date">
+        <div class="form-hint">Leave blank if these keys have no set expiry</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="receipt">Locksmith Receipt (optional)</label>
+      <input type="file" id="receipt" name="receipt" accept=".pdf,.png,.jpg,.jpeg">
+      <div class="form-hint">One receipt covers the whole batch — PDF or image, max 20 MB</div>
+    </div>
+
+    <div class="form-group">
+      <label for="notes">Notes</label>
+      <textarea id="notes" name="notes" rows="2" placeholder="e.g. Replacement set ordered 2024-01; locksmith invoice #1234"></textarea>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" id="submitBtn">Add Keys</button>
+      <a href="/physical-keys" class="btn btn-ghost">Cancel</a>
+    </div>
+  </div>
+</form>
+
+<script>
+// ── Mode switching ─────────────────────────────────────────────────────────
+document.querySelectorAll('.batch-mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const mode = tab.dataset.mode;
+    document.getElementById('modeInput').value = mode;
+    document.querySelectorAll('.batch-mode-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panelRange').style.display = mode === 'range' ? '' : 'none';
+    document.getElementById('panelList').style.display  = mode === 'list'  ? '' : 'none';
+    updateSubmitLabel();
+  });
+});
+
+// ── Range preview ──────────────────────────────────────────────────────────
+function updatePreview() {
+  const prefix   = document.getElementById('prefix').value;
+  const startRaw = document.getElementById('start_num').value.trim();
+  const endRaw   = document.getElementById('end_num').value.trim();
+  const stampsEl = document.getElementById('previewStamps');
+  const countEl  = document.getElementById('previewCount');
+  const warnEl   = document.getElementById('previewWarn');
+
+  if (!startRaw || !endRaw) {
+    stampsEl.textContent = 'Enter a range above to preview stamp numbers.';
+    countEl.textContent  = '0 keys';
+    warnEl.style.display = 'none';
+    updateSubmitLabel(0);
+    return;
+  }
+
+  const startVal = parseInt(startRaw, 10);
+  const endVal   = parseInt(endRaw,   10);
+
+  if (isNaN(startVal) || isNaN(endVal)) {
+    stampsEl.textContent = '⚠ Start and end must be numbers.';
+    countEl.textContent  = '—';
+    warnEl.style.display = 'none';
+    updateSubmitLabel(0);
+    return;
+  }
+  if (startVal > endVal) {
+    stampsEl.textContent = '⚠ Start must be ≤ end.';
+    countEl.textContent  = '—';
+    warnEl.style.display = 'none';
+    updateSubmitLabel(0);
+    return;
+  }
+
+  const pad    = startRaw.length > startVal.toString().length ? startRaw.length : 0;
+  const stamps = [];
+  for (let i = startVal; i <= endVal; i++) {
+    stamps.push(prefix + (pad ? i.toString().padStart(pad, '0') : i.toString()));
+  }
+
+  const MAX_SHOW = 40;
+  if (stamps.length <= MAX_SHOW) {
+    stampsEl.textContent = stamps.join(', ');
+  } else {
+    stampsEl.textContent =
+      stamps.slice(0, MAX_SHOW / 2).join(', ') +
+      ` … and ${stamps.length - MAX_SHOW} more … ` +
+      stamps.slice(-MAX_SHOW / 2).join(', ');
+  }
+
+  countEl.textContent = stamps.length + ' key' + (stamps.length === 1 ? '' : 's');
+
+  if (stamps.length > 500) {
+    warnEl.style.display  = '';
+    warnEl.textContent    = '⚠ Maximum 500 keys per batch. Reduce the range.';
+  } else {
+    warnEl.style.display  = 'none';
+  }
+  updateSubmitLabel(stamps.length);
+}
+
+// ── List preview ───────────────────────────────────────────────────────────
+function updateListPreview() {
+  const lines    = document.getElementById('stamp_list').value
+    .split('\n').map(l => l.trim()).filter(Boolean);
+  const stampsEl = document.getElementById('listPreviewStamps');
+  const countEl  = document.getElementById('listPreviewCount');
+
+  countEl.textContent = lines.length + ' key' + (lines.length === 1 ? '' : 's');
+  stampsEl.textContent = lines.length ? lines.join(', ') : 'Enter stamps above to preview.';
+  updateSubmitLabel(lines.length);
+}
+
+// ── Submit button label ────────────────────────────────────────────────────
+function updateSubmitLabel(n) {
+  const btn = document.getElementById('submitBtn');
+  if (n === undefined) { btn.textContent = 'Add Keys'; return; }
+  btn.textContent = n > 0 ? `Add ${n} Key${n === 1 ? '' : 's'}` : 'Add Keys';
+}
+</script>
+<%- include('../partials/footer') %>

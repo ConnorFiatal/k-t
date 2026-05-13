@@ -1,0 +1,66 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Key Copy Reports</h1>
+  <a href="/reports" class="btn btn-ghost no-print">← All Reports</a>
+</div>
+
+<!-- Summary stats -->
+<div class="stats-bar" style="margin-bottom:1.5rem">
+  <div class="stat-pill"><span class="count-badge"><%= counts.total %></span> Total Copies</div>
+  <div class="stat-pill"><span class="count-badge"><%= counts.active %></span> Active</div>
+  <div class="stat-pill stat-pill-orange"><span class="count-badge"><%= counts.outstanding %></span> Outstanding (issued)</div>
+  <div class="stat-pill stat-pill-red"><span class="count-badge"><%= counts.overdue %></span> Overdue</div>
+</div>
+
+<div class="reports-grid">
+  <a href="/reports/keys/outstanding" class="report-card">
+    <div class="report-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+    </div>
+    <div class="report-body">
+      <h3>Outstanding Keys by Person</h3>
+      <p>All key copies currently issued but not yet returned, grouped by holder.</p>
+    </div>
+  </a>
+
+  <a href="/reports/keys/expiring" class="report-card">
+    <div class="report-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    </div>
+    <div class="report-body">
+      <h3>Expiring Keys</h3>
+      <p>Keys due for return within 7 or 30 days, plus all overdue keys.</p>
+    </div>
+  </a>
+
+  <a href="/reports/keys/lost-history" class="report-card">
+    <div class="report-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v3l2 2"/></svg>
+    </div>
+    <div class="report-body">
+      <h3>Lost Key History</h3>
+      <p>All key copies that have been reported lost or destroyed.</p>
+    </div>
+  </a>
+
+  <a href="/reports/keys/locksmith-history" class="report-card">
+    <div class="report-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <div class="report-body">
+      <h3>Locksmith Transaction History</h3>
+      <p>All key copies received from locksmith, with receipt attachments.</p>
+    </div>
+  </a>
+
+  <a href="/reports/keys/audit-log" class="report-card">
+    <div class="report-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    </div>
+    <div class="report-body">
+      <h3>Full Custody Audit Log</h3>
+      <p>Complete chain of custody for every key copy. Filter by date range, type, or key.</p>
+    </div>
+  </a>
+</div>
+<%- include('../partials/footer') %>
