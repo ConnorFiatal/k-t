@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
+const fs = require('fs');
 
 if (!process.env.SESSION_SECRET) {
   console.error('FATAL: SESSION_SECRET environment variable is not set.');
@@ -51,8 +52,12 @@ app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  // Issue 3 — SameSite=strict prevents cross-origin requests from carrying the session cookie (CSRF mitigation)
-  cookie: { httpOnly: true, maxAge: 8 * 60 * 60 * 1000, sameSite: 'strict' }
+  cookie: {
+    httpOnly: true,
+    maxAge: 8 * 60 * 60 * 1000,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+  }
 }));
 
 app.use((req, res, next) => {
@@ -96,8 +101,30 @@ app.use((req, res, next) => {
   next();
 });
 
+// CSRF: reject state-changing requests that originate from a different host
+app.use((req, res, next) => {
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+    const host = req.get('Host');
+    const origin = req.get('Origin');
+    const referer = req.get('Referer');
+    const sameHost = (url) => { try { return new URL(url).host === host; } catch { return false; } };
+    if (origin && !sameHost(origin)) return res.status(403).send('Forbidden');
+    if (!origin && referer && !sameHost(referer)) return res.status(403).send('Forbidden');
+  }
+  next();
+});
+
 app.use('/', authRoutes);
 app.use(requireLogin);
+
+// Serve uploads directory — requires login (mounted after requireLogin)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  setHeaders: (res, filePath) => {
+    if (path.extname(filePath).toLowerCase() === '.pdf') {
+      res.setHeader('Content-Disposition', 'attachment');
+    }
+  }
+}));
 
 app.get('/', (req, res) => {
   const stats = {
@@ -142,6 +169,5 @@ app.use((req, res) => res.status(404).render('404', { title: 'Not Found' }));
 
 app.listen(PORT, () => {
   console.log(`KeyDog running at http://localhost:${PORT}`);
-  console.log('Default login: admin / admin123 (change this immediately)');
   setupKeyCron();
 });

@@ -11,7 +11,7 @@ const router = express.Router();
 router.use(requirePlanFeature('feature_floor_plans'));
 
 // ── Upload directory ───────────────────────────────────────────────────────
-const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'floorplans');
+const uploadDir = path.join(__dirname, '..', 'uploads', 'floorplans');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -26,9 +26,9 @@ const upload = multer({
   storage,
   limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB
   fileFilter: (req, file, cb) => {
-    const allowed = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']);
+    const allowed = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp']);
     if (allowed.has(path.extname(file.originalname).toLowerCase())) return cb(null, true);
-    cb(new Error('Only image files are accepted (PNG, JPG, GIF, WebP, SVG)'));
+    cb(new Error('Only image files are accepted (PNG, JPG, GIF, WebP)'));
   }
 });
 

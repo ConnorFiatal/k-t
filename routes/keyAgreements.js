@@ -16,7 +16,7 @@ const router = express.Router();
 router.use(requirePlanFeature('feature_key_agreements'));
 
 // ── Signed agreement upload ────────────────────────────────────────────────
-const agreementDir = path.join(__dirname, '..', 'public', 'uploads', 'agreements');
+const agreementDir = path.join(__dirname, '..', 'uploads', 'agreements');
 if (!fs.existsSync(agreementDir)) fs.mkdirSync(agreementDir, { recursive: true });
 
 const agmtStorage = multer.diskStorage({

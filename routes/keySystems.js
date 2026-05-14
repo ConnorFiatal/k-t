@@ -89,6 +89,9 @@ router.post('/:id/delete', requirePermission('key_systems.delete'), (req, res) =
 
 const LEVEL_LABEL = { 'GMK': 'Grand Master', 'MK': 'Master', 'SUB_MASTER': 'Sub-Master', 'CHANGE': 'Change' };
 
+const esc = s => String(s == null ? '' : s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
 function buildTreeHtml(allKeys, parentId, depth) {
   const children = allKeys.filter(k => (k.parent_key_id || null) === (parentId || null));
   if (children.length === 0) return '';
@@ -96,15 +99,15 @@ function buildTreeHtml(allKeys, parentId, depth) {
   const indent = depth === 0 ? 'tree-root' : 'tree-children';
   let html = `<ul class="key-tree-list ${indent}">`;
   for (const k of children) {
-    const levelClass = `level-${(k.level || 'CHANGE').toLowerCase()}`;
-    const levelLabel = LEVEL_LABEL[k.level] || k.level;
+    const lvl = (k.level || 'CHANGE').toLowerCase();
+    const levelLabel = esc(LEVEL_LABEL[k.level] || k.level);
     const doorBadge = k.door_count > 0 ? `<span class="tree-door-count" title="${k.door_count} door(s)">${k.door_count} door${k.door_count !== 1 ? 's' : ''}</span>` : '';
-    const bitting = k.bitting ? `<span class="tree-bitting" title="Bitting">${k.bitting}</span>` : '';
-    const keyway = k.keyway ? `<span class="tree-meta">${k.keyway}</span>` : '';
-    html += `<li class="key-tree-node ${levelClass}">
+    const bitting = k.bitting ? `<span class="tree-bitting" title="Bitting">${esc(k.bitting)}</span>` : '';
+    const keyway = k.keyway ? `<span class="tree-meta">${esc(k.keyway)}</span>` : '';
+    html += `<li class="key-tree-node level-${lvl}">
       <div class="key-tree-card">
-        <span class="badge badge-level-${(k.level || 'CHANGE').toLowerCase()}">${levelLabel}</span>
-        <a href="/keys/${k.id}" class="key-tree-number">${k.key_number}</a>
+        <span class="badge badge-level-${lvl}">${levelLabel}</span>
+        <a href="/keys/${k.id}" class="key-tree-number">${esc(k.key_number)}</a>
         ${bitting}${keyway}${doorBadge}
       </div>
       ${buildTreeHtml(allKeys, k.id, depth + 1)}

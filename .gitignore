@@ -13,6 +13,7 @@ server.err
 
 # User uploads
 public/uploads/
+uploads/
 
 # Claude Code worktrees
 .claude/worktrees/

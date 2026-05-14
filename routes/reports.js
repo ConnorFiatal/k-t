@@ -203,20 +203,23 @@ router.get('/access-by-door', (req, res) => {
   res.render('reports/access-by-door', { title: 'Report: Access by Door', doors: enriched, buildings, filters: { building, type } });
 });
 
+const esc = s => String(s == null ? '' : s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
 function buildTreeHtml(allKeys, parentId, depth) {
   const children = allKeys.filter(k => (k.parent_key_id || null) === (parentId || null));
   if (!children.length) return '';
-  const LEVEL_LABEL = { GMK: 'Grand Master', MK: 'Master', SUB_MASTER: 'Sub-Master', CHANGE: 'Change' };
+  const LBL = { GMK: 'Grand Master', MK: 'Master', SUB_MASTER: 'Sub-Master', CHANGE: 'Change' };
   let html = `<ul class="key-tree-list ${depth === 0 ? 'tree-root' : 'tree-children'}">`;
   for (const k of children) {
     const lvl = (k.level || 'CHANGE').toLowerCase();
-    const lbl = LEVEL_LABEL[k.level] || k.level;
+    const lbl = esc(LBL[k.level] || k.level);
     html += `<li class="key-tree-node level-${lvl}">
       <div class="key-tree-card">
         <span class="badge badge-level-${lvl}">${lbl}</span>
-        <a href="/keys/${k.id}" class="key-tree-number">${k.key_number}</a>
-        ${k.bitting ? `<span class="tree-bitting">${k.bitting}</span>` : ''}
-        ${k.keyway ? `<span class="tree-meta">${k.keyway}</span>` : ''}
+        <a href="/keys/${k.id}" class="key-tree-number">${esc(k.key_number)}</a>
+        ${k.bitting ? `<span class="tree-bitting">${esc(k.bitting)}</span>` : ''}
+        ${k.keyway ? `<span class="tree-meta">${esc(k.keyway)}</span>` : ''}
         ${k.door_count > 0 ? `<span class="tree-door-count">${k.door_count} door${k.door_count !== 1 ? 's' : ''}</span>` : ''}
         ${k.ring_count > 0 ? `<span class="tree-ring-count">${k.ring_count} ring${k.ring_count !== 1 ? 's' : ''}</span>` : ''}
       </div>

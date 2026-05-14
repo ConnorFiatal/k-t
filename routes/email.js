@@ -12,8 +12,11 @@ const express      = require('express');
 const nodemailer   = require('nodemailer');
 const path         = require('path');
 const fs           = require('fs');
+const { requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
+
+const ALLOWED_TEMPLATES = new Set(['welcome', 'key-assigned', 'key-removed', 'key-expiry']);
 
 // ── Transporter ────────────────────────────────────────────────────────────
 let transporter = null;
@@ -101,8 +104,12 @@ async function sendEmail(to, subject, templateName, variables = {}) {
 
 // ── Admin test endpoint ────────────────────────────────────────────────────
 // POST /email/test  { to, template }
-router.post('/test', async (req, res) => {
+router.post('/test', requirePermission('admin.users'), async (req, res) => {
   const { to, template = 'welcome' } = req.body;
+  if (!ALLOWED_TEMPLATES.has(template)) {
+    req.session.flash = { error: 'Invalid email template.' };
+    return res.redirect('/admin/users');
+  }
   if (!to) {
     req.session.flash = { error: 'Recipient email address is required.' };
     return res.redirect('/admin/users');

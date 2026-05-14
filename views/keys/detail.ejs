@@ -4,7 +4,7 @@
     <h1>Key <%= key.key_number %>
       <span class="badge badge-level-<%= (key.level||'CHANGE').toLowerCase() %> badge-lg"><%= LEVEL_LABEL[key.level] || key.level %></span>
     </h1>
-    <p class="text-muted"><a href="/key-systems/<%= key.key_system_id %>"><%= key.system_name %></a><%- key.parent_id ? ` · Parent: <a href="/keys/${key.parent_id}">${key.parent_number}</a>` : '' %></p>
+    <p class="text-muted"><a href="/key-systems/<%= key.key_system_id %>"><%= key.system_name %></a><% if (key.parent_id) { %> · Parent: <a href="/keys/<%= key.parent_id %>"><%= key.parent_number %></a><% } %></p>
   </div>
   <div class="btn-group">
     <a href="/keys/<%= key.id %>/edit" class="btn btn-outline">Edit</a>
@@ -24,7 +24,7 @@
       <table class="info-table">
         <tr><th>System</th><td><a href="/key-systems/<%= key.key_system_id %>"><%= key.system_name %></a></td></tr>
         <tr><th>Level</th><td><span class="badge badge-level-<%= (key.level||'CHANGE').toLowerCase() %>"><%= LEVEL_LABEL[key.level] || key.level %></span></td></tr>
-        <tr><th>Parent Key</th><td><%- key.parent_id ? `<a href="/keys/${key.parent_id}">${key.parent_number}</a>` : '<span class="text-muted">Root key</span>' %></td></tr>
+        <tr><th>Parent Key</th><td><% if (key.parent_id) { %><a href="/keys/<%= key.parent_id %>"><%= key.parent_number %></a><% } else { %><span class="text-muted">Root key</span><% } %></td></tr>
         <tr>
           <th>Bitting</th>
           <td>

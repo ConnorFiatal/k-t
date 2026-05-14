@@ -13,7 +13,7 @@ const { requirePermission } = require('../middleware/auth');
 const router = express.Router();
 
 // ── Receipt upload ─────────────────────────────────────────────────────────
-const receiptDir = path.join(__dirname, '..', 'public', 'uploads', 'receipts');
+const receiptDir = path.join(__dirname, '..', 'uploads', 'receipts');
 if (!fs.existsSync(receiptDir)) fs.mkdirSync(receiptDir, { recursive: true });
 
 const receiptStorage = multer.diskStorage({
