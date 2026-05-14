@@ -1,9 +1,10 @@
 const express = require('express');
 const { db, auditLog } = require('../db');
+const { requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', requirePermission('system_accounts.view'), (req, res) => {
   const { category } = req.query;
   let query = `
     SELECT a.*, COUNT(saa.staff_id) AS access_count
@@ -18,11 +19,11 @@ router.get('/', (req, res) => {
   res.render('system-accounts/index', { title: 'System Accounts', accounts, categories, selectedCategory: category || '' });
 });
 
-router.get('/new', (req, res) => {
+router.get('/new', requirePermission('system_accounts.create'), (req, res) => {
   res.render('system-accounts/form', { title: 'New System Account', account: null, action: '/system-accounts' });
 });
 
-router.post('/', (req, res) => {
+router.post('/', requirePermission('system_accounts.create'), (req, res) => {
   const { system_name, account_username, account_password, url, category, notes } = req.body;
   if (!system_name || !account_username) {
     req.session.flash = { error: 'System name and username are required.' };
@@ -35,7 +36,7 @@ router.post('/', (req, res) => {
   res.redirect(`/system-accounts/${result.lastInsertRowid}`);
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', requirePermission('system_accounts.view'), (req, res) => {
   const account = db.prepare('SELECT * FROM system_accounts WHERE id = ?').get(req.params.id);
   if (!account) { req.session.flash = { error: 'Account not found.' }; return res.redirect('/system-accounts'); }
 
@@ -53,20 +54,20 @@ router.get('/:id', (req, res) => {
 });
 
 // Issue 1 — serve password only on explicit authenticated request, never in page HTML
-router.get('/:id/secret', (req, res) => {
+router.get('/:id/secret', requirePermission('system_accounts.view_passwords'), (req, res) => {
   const account = db.prepare('SELECT id, system_name, account_password FROM system_accounts WHERE id = ?').get(req.params.id);
   if (!account) return res.status(404).json({ error: 'Not found' });
   auditLog('VIEW_SECRET', 'SYSTEM_ACCOUNT', account.id, account.system_name, null, null, req.session.user.username);
   res.json({ password: account.account_password || '' });
 });
 
-router.get('/:id/edit', (req, res) => {
+router.get('/:id/edit', requirePermission('system_accounts.edit'), (req, res) => {
   const account = db.prepare('SELECT * FROM system_accounts WHERE id = ?').get(req.params.id);
   if (!account) { req.session.flash = { error: 'Account not found.' }; return res.redirect('/system-accounts'); }
   res.render('system-accounts/form', { title: `Edit ${account.system_name}`, account, action: `/system-accounts/${account.id}` });
 });
 
-router.post('/:id', (req, res) => {
+router.post('/:id', requirePermission('system_accounts.edit'), (req, res) => {
   const account = db.prepare('SELECT * FROM system_accounts WHERE id = ?').get(req.params.id);
   if (!account) { req.session.flash = { error: 'Account not found.' }; return res.redirect('/system-accounts'); }
 
@@ -76,8 +77,7 @@ router.post('/:id', (req, res) => {
     return res.redirect(`/system-accounts/${account.id}/edit`);
   }
 
-  // Issue 2 — only overwrite the stored password if a new one was actually typed;
-  // leaving the field blank preserves the existing value
+  // Issue 2 — only overwrite the stored password if a new one was actually typed
   const passwordChanged = !!(account_password && account_password.trim());
   const newPassword = passwordChanged ? account_password.trim() : account.account_password;
 
@@ -88,7 +88,7 @@ router.post('/:id', (req, res) => {
   res.redirect(`/system-accounts/${account.id}`);
 });
 
-router.post('/:id/grant', (req, res) => {
+router.post('/:id/grant', requirePermission('system_accounts.edit'), (req, res) => {
   const account = db.prepare('SELECT * FROM system_accounts WHERE id = ?').get(req.params.id);
   if (!account) { req.session.flash = { error: 'Account not found.' }; return res.redirect('/system-accounts'); }
 
@@ -106,7 +106,7 @@ router.post('/:id/grant', (req, res) => {
   res.redirect(`/system-accounts/${account.id}`);
 });
 
-router.post('/:id/revoke/:staffId', (req, res) => {
+router.post('/:id/revoke/:staffId', requirePermission('system_accounts.edit'), (req, res) => {
   const account = db.prepare('SELECT * FROM system_accounts WHERE id = ?').get(req.params.id);
   const staff = db.prepare('SELECT * FROM staff WHERE id = ?').get(req.params.staffId);
   if (!account || !staff) { req.session.flash = { error: 'Record not found.' }; return res.redirect('/system-accounts'); }
@@ -115,6 +115,15 @@ router.post('/:id/revoke/:staffId', (req, res) => {
   auditLog('REVOKE', 'SYSTEM_ACCOUNT', account.id, account.system_name, staff.id, `${staff.first_name} ${staff.last_name}`, req.session.user.username);
   req.session.flash = { success: `Access revoked for ${staff.first_name} ${staff.last_name}.` };
   res.redirect(`/system-accounts/${account.id}`);
+});
+
+router.post('/:id/delete', requirePermission('system_accounts.delete'), (req, res) => {
+  const account = db.prepare('SELECT * FROM system_accounts WHERE id = ?').get(req.params.id);
+  if (!account) { req.session.flash = { error: 'Account not found.' }; return res.redirect('/system-accounts'); }
+  db.prepare('DELETE FROM system_accounts WHERE id = ?').run(account.id);
+  auditLog('DELETE', 'SYSTEM_ACCOUNT', account.id, account.system_name, null, null, req.session.user.username);
+  req.session.flash = { success: `Account "${account.system_name}" deleted.` };
+  res.redirect('/system-accounts');
 });
 
 module.exports = router;

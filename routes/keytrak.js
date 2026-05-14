@@ -1,9 +1,10 @@
 const express = require('express');
 const { db, auditLog } = require('../db');
+const { requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', requirePermission('keyrings.view'), (req, res) => {
   const keyrings = db.prepare(`
     SELECT k.*,
       COUNT(DISTINCT ka.staff_id) AS auth_count,
@@ -18,11 +19,11 @@ router.get('/', (req, res) => {
   res.render('keytrak/index', { title: 'KeyTrak Keyrings', keyrings });
 });
 
-router.get('/new', (req, res) => {
+router.get('/new', requirePermission('keyrings.create'), (req, res) => {
   res.render('keytrak/form', { title: 'New Keyring', keyring: null, action: '/keytrak' });
 });
 
-router.post('/', (req, res) => {
+router.post('/', requirePermission('keyrings.create'), (req, res) => {
   const { ring_number, description, location, notes } = req.body;
   if (!ring_number) { req.session.flash = { error: 'Ring number is required.' }; return res.redirect('/keytrak/new'); }
   try {
@@ -36,7 +37,7 @@ router.post('/', (req, res) => {
   }
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', requirePermission('keyrings.view'), (req, res) => {
   const keyring = db.prepare('SELECT * FROM keyrings WHERE id = ?').get(req.params.id);
   if (!keyring) { req.session.flash = { error: 'Keyring not found.' }; return res.redirect('/keytrak'); }
 
@@ -50,7 +51,6 @@ router.get('/:id', (req, res) => {
   const eligibleStaff = db.prepare("SELECT * FROM staff WHERE status='active' ORDER BY last_name, first_name").all()
     .filter(s => !authIds.includes(s.id));
 
-  // Keys on this ring
   const assignedKeys = db.prepare(`
     SELECT kk.*, k.key_number, k.level, k.bitting, k.keyway, ks.name AS system_name
     FROM keyring_keys kk
@@ -65,7 +65,6 @@ router.get('/:id', (req, res) => {
     JOIN key_systems ks ON ks.id = k.key_system_id ORDER BY ks.name, k.level, k.key_number
   `).all().filter(k => !assignedKeyIds.includes(k.id));
 
-  // FOB profiles on this ring
   const assignedFobs = db.prepare(`
     SELECT kfp.*, fp.name AS profile_name,
       (SELECT COUNT(*) FROM fob_profile_doors fpd WHERE fpd.fob_profile_id = fp.id) AS door_count
@@ -86,13 +85,13 @@ router.get('/:id', (req, res) => {
   });
 });
 
-router.get('/:id/edit', (req, res) => {
+router.get('/:id/edit', requirePermission('keyrings.edit'), (req, res) => {
   const keyring = db.prepare('SELECT * FROM keyrings WHERE id = ?').get(req.params.id);
   if (!keyring) { req.session.flash = { error: 'Keyring not found.' }; return res.redirect('/keytrak'); }
   res.render('keytrak/form', { title: `Edit Keyring ${keyring.ring_number}`, keyring, action: `/keytrak/${keyring.id}` });
 });
 
-router.post('/:id', (req, res) => {
+router.post('/:id', requirePermission('keyrings.edit'), (req, res) => {
   const keyring = db.prepare('SELECT * FROM keyrings WHERE id = ?').get(req.params.id);
   if (!keyring) { req.session.flash = { error: 'Keyring not found.' }; return res.redirect('/keytrak'); }
   const { ring_number, description, location, notes } = req.body;
@@ -111,7 +110,7 @@ router.post('/:id', (req, res) => {
 
 // ── Staff authorization ────────────────────────────────────────────────────
 
-router.post('/:id/grant', (req, res) => {
+router.post('/:id/grant', requirePermission('keyrings.edit'), (req, res) => {
   const keyring = db.prepare('SELECT * FROM keyrings WHERE id = ?').get(req.params.id);
   if (!keyring) { req.session.flash = { error: 'Keyring not found.' }; return res.redirect('/keytrak'); }
   const staff = req.body.staff_id ? db.prepare('SELECT * FROM staff WHERE id = ?').get(req.body.staff_id) : null;
@@ -126,7 +125,7 @@ router.post('/:id/grant', (req, res) => {
   res.redirect(`/keytrak/${keyring.id}`);
 });
 
-router.post('/:id/revoke/:staffId', (req, res) => {
+router.post('/:id/revoke/:staffId', requirePermission('keyrings.edit'), (req, res) => {
   const keyring = db.prepare('SELECT * FROM keyrings WHERE id = ?').get(req.params.id);
   const staff = db.prepare('SELECT * FROM staff WHERE id = ?').get(req.params.staffId);
   if (!keyring || !staff) { req.session.flash = { error: 'Record not found.' }; return res.redirect('/keytrak'); }
@@ -138,7 +137,7 @@ router.post('/:id/revoke/:staffId', (req, res) => {
 
 // ── Key assignments ────────────────────────────────────────────────────────
 
-router.post('/:id/keys/assign', (req, res) => {
+router.post('/:id/keys/assign', requirePermission('keyrings.edit'), (req, res) => {
   const keyring = db.prepare('SELECT * FROM keyrings WHERE id = ?').get(req.params.id);
   if (!keyring) { req.session.flash = { error: 'Keyring not found.' }; return res.redirect('/keytrak'); }
   const key = req.body.key_id ? db.prepare('SELECT *, (SELECT name FROM key_systems WHERE id = key_system_id) AS system_name FROM keys WHERE id = ?').get(req.body.key_id) : null;
@@ -153,7 +152,7 @@ router.post('/:id/keys/assign', (req, res) => {
   res.redirect(`/keytrak/${keyring.id}`);
 });
 
-router.post('/:id/keys/:keyId/remove', (req, res) => {
+router.post('/:id/keys/:keyId/remove', requirePermission('keyrings.edit'), (req, res) => {
   const keyring = db.prepare('SELECT * FROM keyrings WHERE id = ?').get(req.params.id);
   const key = db.prepare('SELECT *, (SELECT name FROM key_systems WHERE id = key_system_id) AS system_name FROM keys WHERE id = ?').get(req.params.keyId);
   if (!keyring || !key) { req.session.flash = { error: 'Record not found.' }; return res.redirect('/keytrak'); }
@@ -165,7 +164,7 @@ router.post('/:id/keys/:keyId/remove', (req, res) => {
 
 // ── FOB profile assignments ────────────────────────────────────────────────
 
-router.post('/:id/fobs/assign', (req, res) => {
+router.post('/:id/fobs/assign', requirePermission('keyrings.edit'), (req, res) => {
   const keyring = db.prepare('SELECT * FROM keyrings WHERE id = ?').get(req.params.id);
   if (!keyring) { req.session.flash = { error: 'Keyring not found.' }; return res.redirect('/keytrak'); }
   const { fob_profile_id, fob_serial } = req.body;
@@ -181,7 +180,7 @@ router.post('/:id/fobs/assign', (req, res) => {
   res.redirect(`/keytrak/${keyring.id}`);
 });
 
-router.post('/:id/fobs/:profileId/remove', (req, res) => {
+router.post('/:id/fobs/:profileId/remove', requirePermission('keyrings.edit'), (req, res) => {
   const keyring = db.prepare('SELECT * FROM keyrings WHERE id = ?').get(req.params.id);
   const profile = db.prepare('SELECT * FROM fob_profiles WHERE id = ?').get(req.params.profileId);
   if (!keyring || !profile) { req.session.flash = { error: 'Record not found.' }; return res.redirect('/keytrak'); }

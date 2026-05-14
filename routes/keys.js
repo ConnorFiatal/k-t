@@ -1,12 +1,13 @@
 const express = require('express');
 const { db, auditLog } = require('../db');
+const { requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
 
 const LEVELS = ['GMK', 'MK', 'SUB_MASTER', 'CHANGE'];
 const LEVEL_LABEL = { GMK: 'Grand Master', MK: 'Master', SUB_MASTER: 'Sub-Master', CHANGE: 'Change' };
 
-router.get('/', (req, res) => {
+router.get('/', requirePermission('keys.view'), (req, res) => {
   const { system_id, level, q } = req.query;
   let query = `
     SELECT k.*, ks.name AS system_name, p.key_number AS parent_number,
@@ -31,7 +32,7 @@ router.get('/', (req, res) => {
   res.render('keys/index', { title: 'Keys', keys, systems, filters: { system_id, level, q }, LEVELS, LEVEL_LABEL });
 });
 
-router.get('/new', (req, res) => {
+router.get('/new', requirePermission('keys.create'), (req, res) => {
   const systems = db.prepare('SELECT id, name FROM key_systems ORDER BY name').all();
   const preSystem = req.query.system_id ? db.prepare('SELECT * FROM key_systems WHERE id = ?').get(req.query.system_id) : null;
   const parentKeys = preSystem
@@ -40,7 +41,7 @@ router.get('/new', (req, res) => {
   res.render('keys/form', { title: 'New Key', key: null, action: '/keys', systems, parentKeys, preSystemId: req.query.system_id || '', LEVELS, LEVEL_LABEL });
 });
 
-router.post('/', (req, res) => {
+router.post('/', requirePermission('keys.create'), (req, res) => {
   const { key_system_id, key_number, level, parent_key_id, bitting, keyway, key_blank, notes } = req.body;
   if (!key_system_id || !key_number || !level) {
     req.session.flash = { error: 'System, key number, and level are required.' };
@@ -61,7 +62,7 @@ router.post('/', (req, res) => {
   }
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', requirePermission('keys.view'), (req, res) => {
   const key = db.prepare(`
     SELECT k.*, ks.name AS system_name, ks.keyway AS system_keyway,
       p.key_number AS parent_number, p.id AS parent_id
@@ -90,7 +91,7 @@ router.get('/:id', (req, res) => {
   res.render('keys/detail', { title: `Key ${key.key_number}`, key, doors, eligibleDoors, childKeys, onRings, LEVEL_LABEL });
 });
 
-router.get('/:id/edit', (req, res) => {
+router.get('/:id/edit', requirePermission('keys.edit'), (req, res) => {
   const key = db.prepare('SELECT * FROM keys WHERE id = ?').get(req.params.id);
   if (!key) { req.session.flash = { error: 'Key not found.' }; return res.redirect('/keys'); }
   const systems = db.prepare('SELECT id, name FROM key_systems ORDER BY name').all();
@@ -99,7 +100,7 @@ router.get('/:id/edit', (req, res) => {
   res.render('keys/form', { title: `Edit Key ${key.key_number}`, key, action: `/keys/${key.id}`, systems, parentKeys, preSystemId: key.key_system_id, LEVELS, LEVEL_LABEL });
 });
 
-router.post('/:id', (req, res) => {
+router.post('/:id', requirePermission('keys.edit'), (req, res) => {
   const key = db.prepare('SELECT * FROM keys WHERE id = ?').get(req.params.id);
   if (!key) { req.session.flash = { error: 'Key not found.' }; return res.redirect('/keys'); }
   const { key_system_id, key_number, level, parent_key_id, bitting, keyway, key_blank, notes } = req.body;
@@ -121,7 +122,7 @@ router.post('/:id', (req, res) => {
   }
 });
 
-router.post('/:id/delete', (req, res) => {
+router.post('/:id/delete', requirePermission('keys.delete'), (req, res) => {
   const key = db.prepare('SELECT *, (SELECT name FROM key_systems WHERE id = key_system_id) AS system_name FROM keys WHERE id = ?').get(req.params.id);
   if (!key) { req.session.flash = { error: 'Key not found.' }; return res.redirect('/keys'); }
   const onRings = db.prepare('SELECT COUNT(*) AS c FROM keyring_keys WHERE key_id = ?').get(key.id).c;
@@ -140,7 +141,7 @@ router.post('/:id/delete', (req, res) => {
   res.redirect(`/key-systems/${key.key_system_id}`);
 });
 
-router.post('/:id/doors/add', (req, res) => {
+router.post('/:id/doors/add', requirePermission('keys.edit'), (req, res) => {
   const key = db.prepare('SELECT * FROM keys WHERE id = ?').get(req.params.id);
   if (!key) { req.session.flash = { error: 'Key not found.' }; return res.redirect('/keys'); }
   const { door_id } = req.body;
@@ -157,7 +158,7 @@ router.post('/:id/doors/add', (req, res) => {
   res.redirect(`/keys/${key.id}`);
 });
 
-router.post('/:id/doors/:doorId/remove', (req, res) => {
+router.post('/:id/doors/:doorId/remove', requirePermission('keys.edit'), (req, res) => {
   const key = db.prepare('SELECT * FROM keys WHERE id = ?').get(req.params.id);
   if (!key) { req.session.flash = { error: 'Key not found.' }; return res.redirect('/keys'); }
   const door = db.prepare('SELECT name FROM doors WHERE id = ?').get(req.params.doorId);

@@ -1,5 +1,6 @@
 const express = require('express');
 const { db } = require('../db');
+const { requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -22,7 +23,7 @@ function buildAuditQuery({ action, resource_type, q, performed_by, date_from, da
 }
 
 // CSV export — must be defined before the '/' GET so Express doesn't treat 'export' as an :id param
-router.get('/export', (req, res) => {
+router.get('/export', requirePermission('audit.view'), (req, res) => {
   const filters = {
     action: req.query.action,
     resource_type: req.query.resource_type,
@@ -54,7 +55,7 @@ router.get('/export', (req, res) => {
   res.send(csv);
 });
 
-router.get('/', (req, res) => {
+router.get('/', requirePermission('audit.view'), (req, res) => {
   const filters = {
     action: req.query.action,
     resource_type: req.query.resource_type,

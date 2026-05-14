@@ -1,9 +1,10 @@
 const express = require('express');
 const { db, auditLog } = require('../db');
+const { requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', requirePermission('fob_profiles.view'), (req, res) => {
   const profiles = db.prepare(`
     SELECT fp.*,
       COUNT(DISTINCT fpd.door_id) AS door_count,
@@ -16,11 +17,11 @@ router.get('/', (req, res) => {
   res.render('fob-profiles/index', { title: 'FOB Profiles', profiles });
 });
 
-router.get('/new', (req, res) => {
+router.get('/new', requirePermission('fob_profiles.create'), (req, res) => {
   res.render('fob-profiles/form', { title: 'New FOB Profile', profile: null, action: '/fob-profiles' });
 });
 
-router.post('/', (req, res) => {
+router.post('/', requirePermission('fob_profiles.create'), (req, res) => {
   const { name, description, notes } = req.body;
   if (!name) { req.session.flash = { error: 'Profile name is required.' }; return res.redirect('/fob-profiles/new'); }
   try {
@@ -35,7 +36,7 @@ router.post('/', (req, res) => {
   }
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', requirePermission('fob_profiles.view'), (req, res) => {
   const profile = db.prepare('SELECT * FROM fob_profiles WHERE id = ?').get(req.params.id);
   if (!profile) { req.session.flash = { error: 'FOB profile not found.' }; return res.redirect('/fob-profiles'); }
 
@@ -56,13 +57,13 @@ router.get('/:id', (req, res) => {
   res.render('fob-profiles/detail', { title: `FOB Profile: ${profile.name}`, profile, doors, eligibleDoors, onRings });
 });
 
-router.get('/:id/edit', (req, res) => {
+router.get('/:id/edit', requirePermission('fob_profiles.edit'), (req, res) => {
   const profile = db.prepare('SELECT * FROM fob_profiles WHERE id = ?').get(req.params.id);
   if (!profile) { req.session.flash = { error: 'FOB profile not found.' }; return res.redirect('/fob-profiles'); }
   res.render('fob-profiles/form', { title: `Edit ${profile.name}`, profile, action: `/fob-profiles/${profile.id}` });
 });
 
-router.post('/:id', (req, res) => {
+router.post('/:id', requirePermission('fob_profiles.edit'), (req, res) => {
   const profile = db.prepare('SELECT * FROM fob_profiles WHERE id = ?').get(req.params.id);
   if (!profile) { req.session.flash = { error: 'FOB profile not found.' }; return res.redirect('/fob-profiles'); }
   const { name, description, notes } = req.body;
@@ -79,7 +80,7 @@ router.post('/:id', (req, res) => {
   }
 });
 
-router.post('/:id/delete', (req, res) => {
+router.post('/:id/delete', requirePermission('fob_profiles.delete'), (req, res) => {
   const profile = db.prepare('SELECT * FROM fob_profiles WHERE id = ?').get(req.params.id);
   if (!profile) { req.session.flash = { error: 'FOB profile not found.' }; return res.redirect('/fob-profiles'); }
   const ringCount = db.prepare('SELECT COUNT(*) AS c FROM keyring_fob_profiles WHERE fob_profile_id = ?').get(profile.id).c;
@@ -93,7 +94,7 @@ router.post('/:id/delete', (req, res) => {
   res.redirect('/fob-profiles');
 });
 
-router.post('/:id/doors/add', (req, res) => {
+router.post('/:id/doors/add', requirePermission('fob_profiles.edit'), (req, res) => {
   const profile = db.prepare('SELECT * FROM fob_profiles WHERE id = ?').get(req.params.id);
   if (!profile) { req.session.flash = { error: 'Profile not found.' }; return res.redirect('/fob-profiles'); }
   const { door_id } = req.body;
@@ -109,7 +110,7 @@ router.post('/:id/doors/add', (req, res) => {
   res.redirect(`/fob-profiles/${profile.id}`);
 });
 
-router.post('/:id/doors/:doorId/remove', (req, res) => {
+router.post('/:id/doors/:doorId/remove', requirePermission('fob_profiles.edit'), (req, res) => {
   const profile = db.prepare('SELECT * FROM fob_profiles WHERE id = ?').get(req.params.id);
   if (!profile) { req.session.flash = { error: 'Profile not found.' }; return res.redirect('/fob-profiles'); }
   const door = db.prepare('SELECT name FROM doors WHERE id = ?').get(req.params.doorId);

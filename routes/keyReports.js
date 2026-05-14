@@ -5,8 +5,11 @@
  */
 const express = require('express');
 const { db }  = require('../db');
+const { requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
+
+router.use(requirePermission('reports.view'));
 
 // ── CSV builder (same pattern as export.js) ────────────────────────────────
 function toCSV(rows, columns) {

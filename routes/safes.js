@@ -1,9 +1,10 @@
 const express = require('express');
 const { db, auditLog } = require('../db');
+const { requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', requirePermission('safes.view'), (req, res) => {
   const safes = db.prepare(`
     SELECT s.*, COUNT(sa.staff_id) AS access_count
     FROM safes s LEFT JOIN safe_access sa ON sa.safe_id = s.id
@@ -12,11 +13,11 @@ router.get('/', (req, res) => {
   res.render('safes/index', { title: 'Safe Combinations', safes });
 });
 
-router.get('/new', (req, res) => {
+router.get('/new', requirePermission('safes.create'), (req, res) => {
   res.render('safes/form', { title: 'New Safe', safe: null, action: '/safes' });
 });
 
-router.post('/', (req, res) => {
+router.post('/', requirePermission('safes.create'), (req, res) => {
   const { name, location, combination, notes } = req.body;
   if (!name || !combination) {
     req.session.flash = { error: 'Name and combination are required.' };
@@ -28,7 +29,7 @@ router.post('/', (req, res) => {
   res.redirect(`/safes/${result.lastInsertRowid}`);
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', requirePermission('safes.view'), (req, res) => {
   const safe = db.prepare('SELECT * FROM safes WHERE id = ?').get(req.params.id);
   if (!safe) { req.session.flash = { error: 'Safe not found.' }; return res.redirect('/safes'); }
 
@@ -45,13 +46,13 @@ router.get('/:id', (req, res) => {
   res.render('safes/detail', { title: safe.name, safe, access, eligibleStaff });
 });
 
-router.get('/:id/edit', (req, res) => {
+router.get('/:id/edit', requirePermission('safes.edit'), (req, res) => {
   const safe = db.prepare('SELECT * FROM safes WHERE id = ?').get(req.params.id);
   if (!safe) { req.session.flash = { error: 'Safe not found.' }; return res.redirect('/safes'); }
   res.render('safes/form', { title: `Edit ${safe.name}`, safe, action: `/safes/${safe.id}` });
 });
 
-router.post('/:id', (req, res) => {
+router.post('/:id', requirePermission('safes.edit'), (req, res) => {
   const safe = db.prepare('SELECT * FROM safes WHERE id = ?').get(req.params.id);
   if (!safe) { req.session.flash = { error: 'Safe not found.' }; return res.redirect('/safes'); }
 
@@ -69,7 +70,7 @@ router.post('/:id', (req, res) => {
   res.redirect(`/safes/${safe.id}`);
 });
 
-router.post('/:id/grant', (req, res) => {
+router.post('/:id/grant', requirePermission('safes.edit'), (req, res) => {
   const safe = db.prepare('SELECT * FROM safes WHERE id = ?').get(req.params.id);
   if (!safe) { req.session.flash = { error: 'Safe not found.' }; return res.redirect('/safes'); }
 
@@ -92,7 +93,7 @@ router.post('/:id/grant', (req, res) => {
   res.redirect(`/safes/${safe.id}`);
 });
 
-router.post('/:id/revoke/:staffId', (req, res) => {
+router.post('/:id/revoke/:staffId', requirePermission('safes.edit'), (req, res) => {
   const safe = db.prepare('SELECT * FROM safes WHERE id = ?').get(req.params.id);
   const staff = db.prepare('SELECT * FROM staff WHERE id = ?').get(req.params.staffId);
   if (!safe || !staff) { req.session.flash = { error: 'Record not found.' }; return res.redirect('/safes'); }
@@ -101,6 +102,15 @@ router.post('/:id/revoke/:staffId', (req, res) => {
   auditLog('REVOKE', 'SAFE', safe.id, safe.name, staff.id, `${staff.first_name} ${staff.last_name}`, req.session.user.username);
   req.session.flash = { success: `Access revoked for ${staff.first_name} ${staff.last_name}.` };
   res.redirect(`/safes/${safe.id}`);
+});
+
+router.post('/:id/delete', requirePermission('safes.delete'), (req, res) => {
+  const safe = db.prepare('SELECT * FROM safes WHERE id = ?').get(req.params.id);
+  if (!safe) { req.session.flash = { error: 'Safe not found.' }; return res.redirect('/safes'); }
+  db.prepare('DELETE FROM safes WHERE id = ?').run(safe.id);
+  auditLog('DELETE', 'SAFE', safe.id, safe.name, null, null, req.session.user.username);
+  req.session.flash = { success: `Safe "${safe.name}" deleted.` };
+  res.redirect('/safes');
 });
 
 module.exports = router;

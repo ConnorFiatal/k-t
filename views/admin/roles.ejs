@@ -1,0 +1,55 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Roles &amp; Permissions</h1>
+  <% if (userCan('admin.roles')) { %>
+  <a href="/admin/roles/new" class="btn btn-primary">+ New Role</a>
+  <% } %>
+</div>
+
+<div class="card card-form">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Role</th>
+        <th>Description</th>
+        <th>Users</th>
+        <th>Type</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% roles.forEach(role => { %>
+      <tr>
+        <td>
+          <strong><%= role.label %></strong>
+          <div class="text-muted" style="font-size:0.8rem;font-family:monospace"><%= role.name %></div>
+        </td>
+        <td class="text-muted"><%= role.description || '—' %></td>
+        <td><%= userCountByRole[role.id] || 0 %></td>
+        <td>
+          <% if (role.is_system) { %>
+            <span class="badge badge-blue badge-sm">System</span>
+          <% } else { %>
+            <span class="badge badge-sm" style="background:var(--color-border);color:var(--color-text-secondary)">Custom</span>
+          <% } %>
+        </td>
+        <td class="text-right">
+          <% if (!role.is_system && userCan('admin.roles')) { %>
+            <a href="/admin/roles/<%= role.id %>/edit" class="btn btn-sm btn-outline">Edit</a>
+            <form action="/admin/roles/<%= role.id %>/delete" method="POST" style="display:inline">
+              <button type="submit" class="btn btn-sm btn-danger"
+                onclick="return confirm('Delete role &quot;<%= role.label %>&quot;? This cannot be undone.')">Delete</button>
+            </form>
+          <% } else { %>
+            <span class="text-muted" style="font-size:0.8rem">Protected</span>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <p class="field-hint" style="padding:1rem 1.5rem 0">
+    System roles are built-in and cannot be modified. Custom roles can be fully configured with granular permissions.
+  </p>
+</div>
+<%- include('../partials/footer') %>

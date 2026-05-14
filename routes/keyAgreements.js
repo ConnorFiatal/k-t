@@ -8,8 +8,12 @@ const multer  = require('multer');
 const path    = require('path');
 const fs      = require('fs');
 const { db }  = require('../db');
+const { requirePermission, requirePlanFeature } = require('../middleware/auth');
 
 const router = express.Router();
+
+// All key agreement routes require the plan feature
+router.use(requirePlanFeature('feature_key_agreements'));
 
 // ── Signed agreement upload ────────────────────────────────────────────────
 const agreementDir = path.join(__dirname, '..', 'public', 'uploads', 'agreements');
@@ -35,7 +39,7 @@ const agmtUpload = multer({
 // ══════════════════════════════════════════════════════════════════════════
 // LIST
 // ══════════════════════════════════════════════════════════════════════════
-router.get('/', (req, res) => {
+router.get('/', requirePermission('key_agreements.view'), (req, res) => {
   const { status, staff_id } = req.query;
 
   let query = `
@@ -78,7 +82,7 @@ router.get('/', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // DETAIL / PRINT
 // ══════════════════════════════════════════════════════════════════════════
-router.get('/:id', (req, res) => {
+router.get('/:id', requirePermission('key_agreements.view'), (req, res) => {
   const agreement = db.prepare(`
     SELECT ka.*,
            pk.stamp_number, pk.status AS key_status, pk.expiry_date AS key_expiry,
@@ -109,7 +113,7 @@ router.get('/:id', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // UPLOAD SIGNED AGREEMENT SCAN
 // ══════════════════════════════════════════════════════════════════════════
-router.post('/:id/upload', agmtUpload.single('signed_agreement'), (req, res) => {
+router.post('/:id/upload', requirePermission('key_agreements.create'), agmtUpload.single('signed_agreement'), (req, res) => {
   const agreement = db.prepare('SELECT * FROM key_agreements WHERE id = ?').get(req.params.id);
   if (!agreement) { req.session.flash = { error: 'Agreement not found.' }; return res.redirect('/key-agreements'); }
   if (!req.file) { req.session.flash = { error: 'No file received.' }; return res.redirect(`/key-agreements/${agreement.id}`); }

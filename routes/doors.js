@@ -1,9 +1,10 @@
 const express = require('express');
 const { db, auditLog } = require('../db');
+const { requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', requirePermission('doors.view'), (req, res) => {
   const { type, q } = req.query;
   let query = `
     SELECT d.*,
@@ -23,16 +24,30 @@ router.get('/', (req, res) => {
   res.render('doors/index', { title: 'Doors', doors, filters: { type, q } });
 });
 
-router.get('/new', (req, res) => {
+router.get('/new', requirePermission('doors.create'), (req, res) => {
   res.render('doors/form', { title: 'New Door', door: null, action: '/doors' });
 });
 
-router.post('/', (req, res) => {
+router.post('/', requirePermission('doors.create'), (req, res) => {
   const { name, door_number, location, building, floor, access_type, notes } = req.body;
   if (!name || !access_type) {
     req.session.flash = { error: 'Name and access type are required.' };
     return res.redirect('/doors/new');
   }
+
+  // Enforce plan max_buildings limit
+  if (building) {
+    const maxBuildings = parseInt(res.locals.planSettings?.max_buildings || '0', 10);
+    if (maxBuildings > 0) {
+      const distinctBuildings = db.prepare("SELECT COUNT(DISTINCT building) AS c FROM doors WHERE building IS NOT NULL AND building != ''").get().c;
+      const alreadyExists = db.prepare("SELECT 1 FROM doors WHERE building = ? LIMIT 1").get(building.trim());
+      if (!alreadyExists && distinctBuildings >= maxBuildings) {
+        req.session.flash = { error: `Your plan allows a maximum of ${maxBuildings} building(s). Upgrade your plan to add more.` };
+        return res.redirect('/doors/new');
+      }
+    }
+  }
+
   const result = db.prepare('INSERT INTO doors (name, door_number, location, building, floor, access_type, notes) VALUES (?, ?, ?, ?, ?, ?, ?)')
     .run(name.trim(), door_number || null, location || null, building || null, floor || null, access_type, notes || null);
   auditLog('CREATE', 'DOOR', result.lastInsertRowid, name.trim(), null, null, req.session.user.username);
@@ -40,7 +55,7 @@ router.post('/', (req, res) => {
   res.redirect(`/doors/${result.lastInsertRowid}`);
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', requirePermission('doors.view'), (req, res) => {
   const door = db.prepare('SELECT * FROM doors WHERE id = ?').get(req.params.id);
   if (!door) { req.session.flash = { error: 'Door not found.' }; return res.redirect('/doors'); }
 
@@ -60,13 +75,13 @@ router.get('/:id', (req, res) => {
   res.render('doors/detail', { title: door.name, door, keys, fobProfiles });
 });
 
-router.get('/:id/edit', (req, res) => {
+router.get('/:id/edit', requirePermission('doors.edit'), (req, res) => {
   const door = db.prepare('SELECT * FROM doors WHERE id = ?').get(req.params.id);
   if (!door) { req.session.flash = { error: 'Door not found.' }; return res.redirect('/doors'); }
   res.render('doors/form', { title: `Edit ${door.name}`, door, action: `/doors/${door.id}` });
 });
 
-router.post('/:id', (req, res) => {
+router.post('/:id', requirePermission('doors.edit'), (req, res) => {
   const door = db.prepare('SELECT * FROM doors WHERE id = ?').get(req.params.id);
   if (!door) { req.session.flash = { error: 'Door not found.' }; return res.redirect('/doors'); }
   const { name, door_number, location, building, floor, access_type, notes } = req.body;
@@ -81,7 +96,7 @@ router.post('/:id', (req, res) => {
   res.redirect(`/doors/${door.id}`);
 });
 
-router.post('/:id/delete', (req, res) => {
+router.post('/:id/delete', requirePermission('doors.delete'), (req, res) => {
   const door = db.prepare('SELECT * FROM doors WHERE id = ?').get(req.params.id);
   if (!door) { req.session.flash = { error: 'Door not found.' }; return res.redirect('/doors'); }
   const keyCount = db.prepare('SELECT COUNT(*) AS c FROM key_door_access WHERE door_id = ?').get(door.id).c;

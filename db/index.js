@@ -2,6 +2,7 @@ const { DatabaseSync } = require('node:sqlite');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
+const { ALL_PERMISSIONS, DEFAULT_ROLE_PERMISSIONS } = require('../middleware/permissions');
 
 const dataDir = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -253,6 +254,32 @@ function initializeDatabase() {
     );
   `);
 
+  // ── Roles & Permissions ────────────────────────────────────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS roles (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      name        TEXT NOT NULL UNIQUE,
+      label       TEXT NOT NULL,
+      description TEXT,
+      is_system   INTEGER NOT NULL DEFAULT 0,
+      created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS role_permissions (
+      role_id    INTEGER NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+      permission TEXT NOT NULL,
+      PRIMARY KEY (role_id, permission)
+    );
+  `);
+
+  // ── Plan Settings ──────────────────────────────────────────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS plan_settings (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+  `);
+
   // ── Migrations: keyrings checkout columns ─────────────────────────────────
   try { db.exec('ALTER TABLE keyrings ADD COLUMN current_holder_staff_id INTEGER REFERENCES staff(id)'); } catch (_) {}
   try { db.exec('ALTER TABLE keyrings ADD COLUMN checked_out_date DATETIME'); } catch (_) {}
@@ -261,11 +288,72 @@ function initializeDatabase() {
   // Migration: add email column to admin_users if it doesn't exist yet
   try { db.exec('ALTER TABLE admin_users ADD COLUMN email TEXT'); } catch (_) {}
 
+  // Migration: add role_id to admin_users
+  try { db.exec('ALTER TABLE admin_users ADD COLUMN role_id INTEGER REFERENCES roles(id)'); } catch (_) {}
+
+  // ── Seed default roles ─────────────────────────────────────────────────────
+  const systemRoles = [
+    { name: 'super_admin', label: 'Super Admin', description: 'Full access to everything. Cannot be modified.', is_system: 1 },
+    { name: 'admin',       label: 'Admin',       description: 'Full access except role and plan management.', is_system: 1 },
+    { name: 'manager',     label: 'Manager',     description: 'View, create, and edit most records. No delete or admin access.', is_system: 1 },
+    { name: 'key_clerk',   label: 'Key Clerk',   description: 'Focused on physical key checkout and transaction operations.', is_system: 1 },
+    { name: 'viewer',      label: 'Viewer',       description: 'Read-only access across all modules.', is_system: 1 },
+  ];
+
+  const insertRole = db.prepare(`
+    INSERT INTO roles (name, label, description, is_system)
+    VALUES (@name, @label, @description, @is_system)
+    ON CONFLICT(name) DO NOTHING
+  `);
+  const insertPerm = db.prepare(`
+    INSERT OR IGNORE INTO role_permissions (role_id, permission) VALUES (?, ?)
+  `);
+  const getRoleId = db.prepare('SELECT id FROM roles WHERE name = ?');
+
+  for (const role of systemRoles) {
+    insertRole.run(role);
+    const row = getRoleId.get(role.name);
+    if (row) {
+      const perms = DEFAULT_ROLE_PERMISSIONS[role.name] || [];
+      for (const perm of perms) insertPerm.run(row.id, perm);
+    }
+  }
+
+  // ── Seed default plan settings (Starter) ──────────────────────────────────
+  const defaultPlanSettings = {
+    plan_name:                'starter',
+    max_admin_users:          '3',
+    max_buildings:            '1',
+    audit_retention_days:     '30',
+    feature_floor_plans:      '0',
+    feature_key_agreements:   '0',
+    feature_ring_checkout:    '0',
+    feature_csv_import_export:'1',
+    feature_email_alerts:     '1',
+    feature_priority_support: '0',
+  };
+
+  const upsertSetting = db.prepare(`
+    INSERT INTO plan_settings (key, value) VALUES (?, ?)
+    ON CONFLICT(key) DO NOTHING
+  `);
+  for (const [key, value] of Object.entries(defaultPlanSettings)) {
+    upsertSetting.run(key, value);
+  }
+
+  // ── Default admin user ─────────────────────────────────────────────────────
   const count = db.prepare('SELECT COUNT(*) AS c FROM admin_users').get();
   if (count.c === 0) {
+    const superAdminRole = getRoleId.get('super_admin');
     const hash = bcrypt.hashSync('admin123', 10);
-    db.prepare('INSERT INTO admin_users (username, password_hash) VALUES (?, ?)').run('admin', hash);
+    db.prepare('INSERT INTO admin_users (username, password_hash, role_id) VALUES (?, ?, ?)').run('admin', hash, superAdminRole?.id ?? null);
     console.log('Default admin created: admin / admin123 — CHANGE THIS PASSWORD IMMEDIATELY');
+  }
+
+  // Ensure existing admin user (no role assigned) gets super_admin role
+  const superAdminRow = getRoleId.get('super_admin');
+  if (superAdminRow) {
+    db.prepare('UPDATE admin_users SET role_id = ? WHERE role_id IS NULL').run(superAdminRow.id);
   }
 }
 

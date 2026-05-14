@@ -1,7 +1,10 @@
 const express = require('express');
 const { db } = require('../db');
+const { requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
+
+router.use(requirePermission('reports.view'));
 
 const LEVEL_LABEL = { GMK: 'Grand Master', MK: 'Master', SUB_MASTER: 'Sub-Master', CHANGE: 'Change' };
 

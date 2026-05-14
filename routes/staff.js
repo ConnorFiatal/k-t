@@ -1,9 +1,10 @@
 const express = require('express');
 const { db, auditLog } = require('../db');
+const { requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', requirePermission('staff.view'), (req, res) => {
   const { status, q } = req.query;
   let query = 'SELECT * FROM staff WHERE 1=1';
   const params = [];
@@ -27,11 +28,11 @@ router.get('/', (req, res) => {
   res.render('staff/index', { title: 'Staff', staff, q: q || '', status: status || 'active' });
 });
 
-router.get('/new', (req, res) => {
+router.get('/new', requirePermission('staff.create'), (req, res) => {
   res.render('staff/form', { title: 'New Staff Member', staff: null, action: '/staff' });
 });
 
-router.post('/', (req, res) => {
+router.post('/', requirePermission('staff.create'), (req, res) => {
   const { first_name, last_name, employee_id, department, title, email, phone, start_date, notes } = req.body;
   if (!first_name || !last_name) {
     req.session.flash = { error: 'First and last name are required.' };
@@ -53,7 +54,7 @@ router.post('/', (req, res) => {
   }
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', requirePermission('staff.view'), (req, res) => {
   const staff = db.prepare('SELECT * FROM staff WHERE id = ?').get(req.params.id);
   if (!staff) { req.session.flash = { error: 'Staff member not found.' }; return res.redirect('/staff'); }
 
@@ -75,13 +76,13 @@ router.get('/:id', (req, res) => {
   res.render('staff/detail', { title: `${staff.first_name} ${staff.last_name}`, staff, safeAccess, keyrings, systemAccounts });
 });
 
-router.get('/:id/edit', (req, res) => {
+router.get('/:id/edit', requirePermission('staff.edit'), (req, res) => {
   const staff = db.prepare('SELECT * FROM staff WHERE id = ?').get(req.params.id);
   if (!staff) { req.session.flash = { error: 'Staff member not found.' }; return res.redirect('/staff'); }
   res.render('staff/form', { title: `Edit ${staff.first_name} ${staff.last_name}`, staff, action: `/staff/${staff.id}` });
 });
 
-router.post('/:id', (req, res) => {
+router.post('/:id', requirePermission('staff.edit'), (req, res) => {
   const staff = db.prepare('SELECT * FROM staff WHERE id = ?').get(req.params.id);
   if (!staff) { req.session.flash = { error: 'Staff member not found.' }; return res.redirect('/staff'); }
 
@@ -107,7 +108,7 @@ router.post('/:id', (req, res) => {
   }
 });
 
-router.post('/:id/terminate', (req, res) => {
+router.post('/:id/terminate', requirePermission('staff.edit'), (req, res) => {
   const staff = db.prepare('SELECT * FROM staff WHERE id = ?').get(req.params.id);
   if (!staff) { req.session.flash = { error: 'Staff member not found.' }; return res.redirect('/staff'); }
 
@@ -118,7 +119,7 @@ router.post('/:id/terminate', (req, res) => {
   res.redirect(`/staff/${staff.id}/termination`);
 });
 
-router.post('/:id/reactivate', (req, res) => {
+router.post('/:id/reactivate', requirePermission('staff.edit'), (req, res) => {
   const staff = db.prepare('SELECT * FROM staff WHERE id = ?').get(req.params.id);
   if (!staff) { req.session.flash = { error: 'Staff member not found.' }; return res.redirect('/staff'); }
 
@@ -128,7 +129,7 @@ router.post('/:id/reactivate', (req, res) => {
   res.redirect(`/staff/${staff.id}`);
 });
 
-router.get('/:id/termination', (req, res) => {
+router.get('/:id/termination', requirePermission('staff.view'), (req, res) => {
   const staff = db.prepare('SELECT * FROM staff WHERE id = ?').get(req.params.id);
   if (!staff) { req.session.flash = { error: 'Staff member not found.' }; return res.redirect('/staff'); }
 
@@ -151,7 +152,7 @@ router.get('/:id/termination', (req, res) => {
   res.render('staff/termination', { title: `Termination Checklist — ${staff.first_name} ${staff.last_name}`, staff, safeAccess, keyrings, systemAccounts, totalAccess });
 });
 
-router.post('/:id/revoke-all', (req, res) => {
+router.post('/:id/revoke-all', requirePermission('staff.edit'), (req, res) => {
   const staff = db.prepare('SELECT * FROM staff WHERE id = ?').get(req.params.id);
   if (!staff) { req.session.flash = { error: 'Staff member not found.' }; return res.redirect('/staff'); }
 

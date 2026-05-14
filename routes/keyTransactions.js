@@ -8,6 +8,7 @@ const multer  = require('multer');
 const path    = require('path');
 const fs      = require('fs');
 const { db, auditLog } = require('../db');
+const { requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -88,7 +89,7 @@ function getPageData() {
 // ══════════════════════════════════════════════════════════════════════════
 // GET / — show transaction page
 // ══════════════════════════════════════════════════════════════════════════
-router.get('/', (req, res) => {
+router.get('/', requirePermission('key_transactions.view'), (req, res) => {
   res.render('key-transactions/index', {
     title: 'Key Transactions', ...getPageData()
   });
@@ -97,7 +98,7 @@ router.get('/', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // POST /issued-from-locksmith — receive new key from locksmith
 // ══════════════════════════════════════════════════════════════════════════
-router.post('/issued-from-locksmith', receiptUpload.single('receipt'), (req, res) => {
+router.post('/issued-from-locksmith', requirePermission('key_transactions.create'), receiptUpload.single('receipt'), (req, res) => {
   const { stamp_number, key_type_id, keytrak_ring_id, transaction_date, notes } = req.body;
   if (!stamp_number || !key_type_id) {
     req.session.flash = { error: 'Stamp number and key type are required.' };
@@ -137,7 +138,7 @@ router.post('/issued-from-locksmith', receiptUpload.single('receipt'), (req, res
 // ══════════════════════════════════════════════════════════════════════════
 // POST /issued-to-person — issue existing key to a staff member
 // ══════════════════════════════════════════════════════════════════════════
-router.post('/issued-to-person', (req, res) => {
+router.post('/issued-to-person', requirePermission('key_transactions.create'), (req, res) => {
   const { physical_key_id, staff_id, issued_date, expiry_date, notes } = req.body;
   const pk  = physical_key_id ? db.prepare(`SELECT pk.*, k.key_number, ks.name AS system_name FROM physical_keys pk JOIN keys k ON k.id = pk.key_type_id JOIN key_systems ks ON ks.id = k.key_system_id WHERE pk.id = ?`).get(physical_key_id) : null;
   const staff = staff_id ? db.prepare('SELECT * FROM staff WHERE id = ?').get(staff_id) : null;
@@ -186,7 +187,7 @@ router.post('/issued-to-person', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // POST /returned — record return
 // ══════════════════════════════════════════════════════════════════════════
-router.post('/returned', (req, res) => {
+router.post('/returned', requirePermission('key_transactions.create'), (req, res) => {
   const { physical_key_id, returned_date, condition, notes } = req.body;
   const pk = physical_key_id ? db.prepare('SELECT * FROM physical_keys WHERE id = ?').get(physical_key_id) : null;
   if (!pk || !returned_date) {
@@ -222,7 +223,7 @@ router.post('/returned', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // POST /lost — record loss
 // ══════════════════════════════════════════════════════════════════════════
-router.post('/lost', (req, res) => {
+router.post('/lost', requirePermission('key_transactions.create'), (req, res) => {
   const { physical_key_id, lost_date, report_number, notes } = req.body;
   const pk = physical_key_id ? db.prepare('SELECT * FROM physical_keys WHERE id = ?').get(physical_key_id) : null;
   if (!pk) { req.session.flash = { error: 'Select a valid key.' }; return res.redirect('/key-transactions'); }
@@ -252,7 +253,7 @@ router.post('/lost', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // POST /damaged-destroyed — record damage or destruction
 // ══════════════════════════════════════════════════════════════════════════
-router.post('/damaged-destroyed', (req, res) => {
+router.post('/damaged-destroyed', requirePermission('key_transactions.create'), (req, res) => {
   const { physical_key_id, status_type, event_date, witness, notes } = req.body;
   const newStatus = status_type === 'destroyed' ? 'destroyed' : 'damaged';
   const txType    = newStatus;
@@ -284,7 +285,7 @@ router.post('/damaged-destroyed', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // POST /replaced — replace a key copy with a new one from locksmith
 // ══════════════════════════════════════════════════════════════════════════
-router.post('/replaced', receiptUpload.single('receipt'), (req, res) => {
+router.post('/replaced', requirePermission('key_transactions.create'), receiptUpload.single('receipt'), (req, res) => {
   const { old_key_id, new_stamp_number, transaction_date, notes } = req.body;
   const oldKey = old_key_id ? db.prepare(`
     SELECT pk.*, k.key_number, k.id AS key_type_id_val, ks.name AS system_name, pk.keytrak_ring_id

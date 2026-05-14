@@ -9,8 +9,9 @@ if (!process.env.SESSION_SECRET) {
   process.exit(1);
 }
 
-const { requireLogin } = require('./middleware/auth');
+const { requireLogin, userCan } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
+const rolesRoutes = require('./routes/roles');
 const staffRoutes = require('./routes/staff');
 const safesRoutes = require('./routes/safes');
 const keytrakRoutes = require('./routes/keytrak');
@@ -56,6 +57,17 @@ app.use((req, res, next) => {
   res.locals.currentPath = req.path;
   res.locals.flash = req.session.flash || null;
   if (req.session.flash) delete req.session.flash;
+
+  // Load plan settings and expose helpers to all templates
+  try {
+    const rows = db.prepare('SELECT key, value FROM plan_settings').all();
+    const ps = {};
+    for (const r of rows) ps[r.key] = r.value;
+    res.locals.planSettings = ps;
+  } catch {
+    res.locals.planSettings = {};
+  }
+  res.locals.userCan = (permission) => userCan(req.session.user, permission);
   next();
 });
 
@@ -85,6 +97,7 @@ app.use('/keytrak', keytrakRoutes);
 app.use('/system-accounts', systemAccountsRoutes);
 app.use('/audit', auditRoutes);
 app.use('/admin', adminRoutes);
+app.use('/admin/roles', rolesRoutes);
 app.use('/key-systems', keySystemsRoutes);
 app.use('/keys', keysRoutes);
 app.use('/doors', doorsRoutes);

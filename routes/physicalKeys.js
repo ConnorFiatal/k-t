@@ -8,6 +8,7 @@ const multer  = require('multer');
 const path    = require('path');
 const fs      = require('fs');
 const { db, auditLog } = require('../db');
+const { requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -92,7 +93,7 @@ function isOverdue(dateStr) {
 // ══════════════════════════════════════════════════════════════════════════
 // LIST
 // ══════════════════════════════════════════════════════════════════════════
-router.get('/', (req, res) => {
+router.get('/', requirePermission('physical_keys.view'), (req, res) => {
   const { status, system_id, q } = req.query;
 
   let query = `
@@ -143,7 +144,7 @@ router.get('/', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // NEW / CREATE
 // ══════════════════════════════════════════════════════════════════════════
-router.get('/new', (req, res) => {
+router.get('/new', requirePermission('physical_keys.create'), (req, res) => {
   const allKeys  = db.prepare(`
     SELECT k.*, ks.name AS system_name FROM keys k
     JOIN key_systems ks ON ks.id = k.key_system_id ORDER BY ks.name, k.level, k.key_number
@@ -155,7 +156,7 @@ router.get('/new', (req, res) => {
   });
 });
 
-router.post('/', receiptUpload.single('receipt'), (req, res) => {
+router.post('/', requirePermission('physical_keys.create'), receiptUpload.single('receipt'), (req, res) => {
   const { stamp_number, key_type_id, keytrak_ring_id, notes, expiry_date, transaction_date } = req.body;
   if (!stamp_number || !key_type_id) {
     req.session.flash = { error: 'Stamp number and key type are required.' };
@@ -196,7 +197,7 @@ router.post('/', receiptUpload.single('receipt'), (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // BATCH CREATE  (must be before /:id so "batch" isn't treated as an ID)
 // ══════════════════════════════════════════════════════════════════════════
-router.get('/batch', (req, res) => {
+router.get('/batch', requirePermission('physical_keys.create'), (req, res) => {
   const allKeys  = db.prepare(`
     SELECT k.*, ks.name AS system_name FROM keys k
     JOIN key_systems ks ON ks.id = k.key_system_id ORDER BY ks.name, k.level, k.key_number
@@ -207,7 +208,7 @@ router.get('/batch', (req, res) => {
   });
 });
 
-router.post('/batch', receiptUpload.single('receipt'), (req, res) => {
+router.post('/batch', requirePermission('physical_keys.create'), receiptUpload.single('receipt'), (req, res) => {
   const {
     mode, prefix, start_num, end_num, stamp_list,
     key_type_id, keytrak_ring_id, notes, expiry_date, transaction_date
@@ -315,7 +316,7 @@ router.post('/batch', receiptUpload.single('receipt'), (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // DETAIL
 // ══════════════════════════════════════════════════════════════════════════
-router.get('/:id', (req, res) => {
+router.get('/:id', requirePermission('physical_keys.view'), (req, res) => {
   const pk = getPhysicalKey(req.params.id);
   if (!pk) { req.session.flash = { error: 'Physical key not found.' }; return res.redirect('/physical-keys'); }
 
@@ -347,7 +348,7 @@ router.get('/:id', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // EDIT
 // ══════════════════════════════════════════════════════════════════════════
-router.get('/:id/edit', (req, res) => {
+router.get('/:id/edit', requirePermission('physical_keys.edit'), (req, res) => {
   const pk = db.prepare('SELECT * FROM physical_keys WHERE id = ?').get(req.params.id);
   if (!pk) { req.session.flash = { error: 'Physical key not found.' }; return res.redirect('/physical-keys'); }
   const allKeys  = db.prepare(`
@@ -361,7 +362,7 @@ router.get('/:id/edit', (req, res) => {
   });
 });
 
-router.post('/:id', (req, res) => {
+router.post('/:id', requirePermission('physical_keys.edit'), (req, res) => {
   const pk = db.prepare('SELECT * FROM physical_keys WHERE id = ?').get(req.params.id);
   if (!pk) { req.session.flash = { error: 'Physical key not found.' }; return res.redirect('/physical-keys'); }
   const { stamp_number, key_type_id, keytrak_ring_id, notes, expiry_date } = req.body;
@@ -385,7 +386,7 @@ router.post('/:id', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // ISSUE TO PERSON
 // ══════════════════════════════════════════════════════════════════════════
-router.post('/:id/issue', (req, res) => {
+router.post('/:id/issue', requirePermission('key_transactions.create'), (req, res) => {
   const pk = getPhysicalKey(req.params.id);
   if (!pk) { req.session.flash = { error: 'Physical key not found.' }; return res.redirect('/physical-keys'); }
   if (pk.status !== 'active') {
@@ -439,7 +440,7 @@ router.post('/:id/issue', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // RETURN
 // ══════════════════════════════════════════════════════════════════════════
-router.post('/:id/return', (req, res) => {
+router.post('/:id/return', requirePermission('key_transactions.create'), (req, res) => {
   const pk = getPhysicalKey(req.params.id);
   if (!pk) { req.session.flash = { error: 'Physical key not found.' }; return res.redirect('/physical-keys'); }
 
@@ -481,7 +482,7 @@ router.post('/:id/return', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // MARK LOST
 // ══════════════════════════════════════════════════════════════════════════
-router.post('/:id/lost', (req, res) => {
+router.post('/:id/lost', requirePermission('key_transactions.create'), (req, res) => {
   const pk = db.prepare('SELECT * FROM physical_keys WHERE id = ?').get(req.params.id);
   if (!pk) { req.session.flash = { error: 'Physical key not found.' }; return res.redirect('/physical-keys'); }
   const { lost_date, report_number, notes } = req.body;
@@ -512,7 +513,7 @@ router.post('/:id/lost', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // MARK DAMAGED
 // ══════════════════════════════════════════════════════════════════════════
-router.post('/:id/damaged', (req, res) => {
+router.post('/:id/damaged', requirePermission('key_transactions.create'), (req, res) => {
   const pk = db.prepare('SELECT * FROM physical_keys WHERE id = ?').get(req.params.id);
   if (!pk) { req.session.flash = { error: 'Physical key not found.' }; return res.redirect('/physical-keys'); }
   const { damage_date, witness, notes } = req.body;
@@ -541,7 +542,7 @@ router.post('/:id/damaged', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // MARK DESTROYED
 // ══════════════════════════════════════════════════════════════════════════
-router.post('/:id/destroyed', (req, res) => {
+router.post('/:id/destroyed', requirePermission('key_transactions.create'), (req, res) => {
   const pk = db.prepare('SELECT * FROM physical_keys WHERE id = ?').get(req.params.id);
   if (!pk) { req.session.flash = { error: 'Physical key not found.' }; return res.redirect('/physical-keys'); }
   const { destroyed_date, witness, notes } = req.body;

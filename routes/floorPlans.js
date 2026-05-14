@@ -3,8 +3,12 @@ const multer  = require('multer');
 const path    = require('path');
 const fs      = require('fs');
 const { db, auditLog } = require('../db');
+const { requirePermission, requirePlanFeature } = require('../middleware/auth');
 
 const router = express.Router();
+
+// All floor plan routes require the plan feature
+router.use(requirePlanFeature('feature_floor_plans'));
 
 // ── Upload directory ───────────────────────────────────────────────────────
 const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'floorplans');
@@ -41,7 +45,7 @@ const getPins = (planId) => db.prepare(`
 // ══════════════════════════════════════════════════════════════════════════
 // LIST
 // ══════════════════════════════════════════════════════════════════════════
-router.get('/', (req, res) => {
+router.get('/', requirePermission('floor_plans.view'), (req, res) => {
   const plans = db.prepare(`
     SELECT fp.*, COUNT(fpd.id) AS door_count
     FROM floor_plans fp
@@ -55,11 +59,11 @@ router.get('/', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // NEW / CREATE
 // ══════════════════════════════════════════════════════════════════════════
-router.get('/new', (req, res) => {
+router.get('/new', requirePermission('floor_plans.create'), (req, res) => {
   res.render('floor-plans/new', { title: 'Upload Floor Plan' });
 });
 
-router.post('/', upload.single('image'), (req, res) => {
+router.post('/', requirePermission('floor_plans.create'), upload.single('image'), (req, res) => {
   if (!req.file) {
     req.session.flash = { error: 'An image file is required.' };
     return res.redirect('/floor-plans/new');
@@ -80,7 +84,7 @@ router.post('/', upload.single('image'), (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // VIEWER
 // ══════════════════════════════════════════════════════════════════════════
-router.get('/:id', (req, res) => {
+router.get('/:id', requirePermission('floor_plans.view'), (req, res) => {
   const plan = db.prepare('SELECT * FROM floor_plans WHERE id = ?').get(req.params.id);
   if (!plan) { req.session.flash = { error: 'Floor plan not found.' }; return res.redirect('/floor-plans'); }
   const pins = getPins(plan.id);
@@ -90,7 +94,7 @@ router.get('/:id', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // EDITOR
 // ══════════════════════════════════════════════════════════════════════════
-router.get('/:id/edit', (req, res) => {
+router.get('/:id/edit', requirePermission('floor_plans.edit'), (req, res) => {
   const plan = db.prepare('SELECT * FROM floor_plans WHERE id = ?').get(req.params.id);
   if (!plan) { req.session.flash = { error: 'Floor plan not found.' }; return res.redirect('/floor-plans'); }
   const pins = getPins(plan.id);
@@ -103,7 +107,7 @@ router.get('/:id/edit', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // API — place or move a pin  (POST /floor-plans/:id/doors)
 // ══════════════════════════════════════════════════════════════════════════
-router.post('/:id/doors', express.json(), (req, res) => {
+router.post('/:id/doors', requirePermission('floor_plans.edit'), express.json(), (req, res) => {
   const plan = db.prepare('SELECT id FROM floor_plans WHERE id = ?').get(req.params.id);
   if (!plan) return res.status(404).json({ error: 'Not found' });
 
@@ -126,7 +130,7 @@ router.post('/:id/doors', express.json(), (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // API — remove a pin  (POST /floor-plans/:id/doors/:doorId/remove)
 // ══════════════════════════════════════════════════════════════════════════
-router.post('/:id/doors/:doorId/remove', express.json(), (req, res) => {
+router.post('/:id/doors/:doorId/remove', requirePermission('floor_plans.edit'), express.json(), (req, res) => {
   db.prepare('DELETE FROM floor_plan_doors WHERE floor_plan_id = ? AND door_id = ?')
     .run(req.params.id, req.params.doorId);
 
@@ -140,7 +144,7 @@ router.post('/:id/doors/:doorId/remove', express.json(), (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 // DELETE FLOOR PLAN
 // ══════════════════════════════════════════════════════════════════════════
-router.post('/:id/delete', (req, res) => {
+router.post('/:id/delete', requirePermission('floor_plans.delete'), (req, res) => {
   const plan = db.prepare('SELECT * FROM floor_plans WHERE id = ?').get(req.params.id);
   if (!plan) { req.session.flash = { error: 'Not found.' }; return res.redirect('/floor-plans'); }
 

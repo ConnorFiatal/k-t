@@ -18,100 +18,174 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
           Dashboard
         </a></li>
+
+        <% if (userCan('staff.view')) { %>
         <li><a href="/staff" class="<%= currentPath.startsWith('/staff') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Staff
         </a></li>
+        <% } %>
 
         <li class="nav-section-label">Physical Access</li>
 
+        <% if (userCan('doors.view')) { %>
         <li><a href="/doors" class="<%= currentPath.startsWith('/doors') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           Doors
         </a></li>
+        <% } %>
+
+        <% if (userCan('key_systems.view')) { %>
         <li><a href="/key-systems" class="<%= currentPath.startsWith('/key-systems') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="15" r="4"/><path d="M12 15h8M16 11v8"/></svg>
           Key Systems
         </a></li>
+        <% } %>
+
+        <% if (userCan('keys.view')) { %>
         <li><a href="/keys" class="<%= currentPath.startsWith('/keys') && !currentPath.startsWith('/key-systems') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
           Keys
         </a></li>
+        <% } %>
+
+        <% if (userCan('fob_profiles.view')) { %>
         <li><a href="/fob-profiles" class="<%= currentPath.startsWith('/fob-profiles') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
           FOB Profiles
         </a></li>
+        <% } %>
+
+        <% if (userCan('floor_plans.view') && planSettings.feature_floor_plans === '1') { %>
         <li><a href="/floor-plans" class="<%= currentPath.startsWith('/floor-plans') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M9 21V9"/></svg>
           Floor Plans
         </a></li>
+        <% } %>
+
+        <% if (userCan('keyrings.view')) { %>
         <li><a href="/keytrak" class="<%= currentPath.startsWith('/keytrak') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
           KeyTrak Keyrings
         </a></li>
+        <% } %>
 
         <li class="nav-section-label">Physical Key Copies</li>
 
+        <% if (userCan('physical_keys.view')) { %>
         <li><a href="/physical-keys" class="<%= currentPath.startsWith('/physical-keys') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/><circle cx="6" cy="18" r="2" fill="currentColor"/></svg>
           Physical Key Copies
         </a></li>
+        <% } %>
+
+        <% if (userCan('ring_checkout.view') && planSettings.feature_ring_checkout === '1') { %>
         <li><a href="/ring-checkout" class="<%= currentPath.startsWith('/ring-checkout') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>
           Ring Checkout
         </a></li>
+        <% } %>
+
+        <% if (userCan('key_transactions.view')) { %>
         <li><a href="/key-transactions" class="<%= currentPath.startsWith('/key-transactions') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
           Transactions
         </a></li>
+        <% } %>
+
+        <% if (userCan('key_agreements.view') && planSettings.feature_key_agreements === '1') { %>
         <li><a href="/key-agreements" class="<%= currentPath.startsWith('/key-agreements') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h4"/></svg>
           Key Agreements
         </a></li>
+        <% } %>
+
+        <% if (userCan('reports.view')) { %>
         <li><a href="/reports/keys" class="<%= currentPath.startsWith('/reports/keys') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           Key Reports
         </a></li>
+        <% } %>
 
         <li class="nav-section-label">Credentials</li>
 
+        <% if (userCan('safes.view')) { %>
         <li><a href="/safes" class="<%= currentPath.startsWith('/safes') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M12 9v-2M12 17v-2M9 12H7M17 12h-2"/></svg>
           Safe Combinations
         </a></li>
+        <% } %>
+
+        <% if (userCan('system_accounts.view')) { %>
         <li><a href="/system-accounts" class="<%= currentPath.startsWith('/system-accounts') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
           System Accounts
         </a></li>
+        <% } %>
 
         <li class="nav-section-label">Management</li>
 
+        <% if (userCan('data.import') && planSettings.feature_csv_import_export === '1') { %>
         <li><a href="/import" class="<%= currentPath.startsWith('/import') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Import
         </a></li>
+        <% } %>
+
+        <% if (userCan('data.export') && planSettings.feature_csv_import_export === '1') { %>
         <li><a href="/export" class="<%= currentPath.startsWith('/export') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Export
         </a></li>
-        <li><a href="/reports" class="<%= currentPath.startsWith('/reports') ? 'active' : '' %>">
+        <% } %>
+
+        <% if (userCan('reports.view')) { %>
+        <li><a href="/reports" class="<%= currentPath.startsWith('/reports') && !currentPath.startsWith('/reports/keys') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           Reports
         </a></li>
+        <% } %>
+
+        <% if (userCan('audit.view')) { %>
         <li><a href="/audit" class="<%= currentPath.startsWith('/audit') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           Audit Log
         </a></li>
+        <% } %>
+
+        <% if (userCan('admin.users') || userCan('admin.roles') || userCan('admin.plan')) { %>
         <li class="nav-divider"></li>
-        <li><a href="/admin/users" class="<%= currentPath.startsWith('/admin') ? 'active' : '' %>">
+        <% } %>
+
+        <% if (userCan('admin.users')) { %>
+        <li><a href="/admin/users" class="<%= currentPath.startsWith('/admin/users') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/><path d="M16 11l2 2 4-4"/></svg>
           Admin Users
         </a></li>
+        <% } %>
+
+        <% if (userCan('admin.roles')) { %>
+        <li><a href="/admin/roles" class="<%= currentPath.startsWith('/admin/roles') ? 'active' : '' %>">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Roles &amp; Permissions
+        </a></li>
+        <% } %>
+
+        <% if (userCan('admin.plan')) { %>
+        <li><a href="/admin/plan" class="<%= currentPath.startsWith('/admin/plan') ? 'active' : '' %>">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          Plan Settings
+        </a></li>
+        <% } %>
+
       </ul>
       <div class="sidebar-user">
         <span class="sidebar-username">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
           <%= user.username %>
+          <% if (user.role_label || user.role_name) { %>
+            <span class="badge badge-sm" style="font-size:0.65rem;margin-left:0.25rem"><%= user.role_label || user.role_name %></span>
+          <% } %>
         </span>
         <form action="/logout" method="POST">
           <button type="submit" class="btn-logout">Logout</button>

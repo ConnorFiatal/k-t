@@ -1,7 +1,10 @@
 const express = require('express');
 const { db }  = require('../db');
+const { requirePermission, requirePlanFeature } = require('../middleware/auth');
 
 const router = express.Router();
+
+router.use(requirePlanFeature('feature_csv_import_export'), requirePermission('data.export'));
 
 // ── CSV builder ────────────────────────────────────────────────────────────
 function toCSV(rows, columns) {

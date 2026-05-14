@@ -6,11 +6,15 @@
  */
 const express = require('express');
 const { db, auditLog } = require('../db');
+const { requirePermission, requirePlanFeature } = require('../middleware/auth');
 
 const router = express.Router();
 
+// All ring-checkout routes require the plan feature
+router.use(requirePlanFeature('feature_ring_checkout'));
+
 // ── List: all rings with checkout status ───────────────────────────────────
-router.get('/', (req, res) => {
+router.get('/', requirePermission('ring_checkout.view'), (req, res) => {
   const rings = db.prepare(`
     SELECT kr.*,
            s.first_name AS holder_first, s.last_name AS holder_last, s.id AS holder_id,
@@ -29,7 +33,7 @@ router.get('/', (req, res) => {
 });
 
 // ── Detail: ring with physical keys + checkout form ────────────────────────
-router.get('/:id', (req, res) => {
+router.get('/:id', requirePermission('ring_checkout.view'), (req, res) => {
   const ring = db.prepare(`
     SELECT kr.*,
            s.first_name AS holder_first, s.last_name AS holder_last,
@@ -40,7 +44,6 @@ router.get('/:id', (req, res) => {
   `).get(req.params.id);
   if (!ring) { req.session.flash = { error: 'Keyring not found.' }; return res.redirect('/ring-checkout'); }
 
-  // Physical key copies on this ring
   const physicalKeys = db.prepare(`
     SELECT pk.*,
            k.key_number, k.level,
@@ -55,7 +58,6 @@ router.get('/:id', (req, res) => {
     ORDER BY pk.stamp_number
   `).all(ring.id);
 
-  // Key types (logical keys) on this ring
   const keyTypes = db.prepare(`
     SELECT k.key_number, k.level, ks.name AS system_name, kk.assigned_at, kk.assigned_by
     FROM keyring_keys kk
@@ -65,7 +67,6 @@ router.get('/:id', (req, res) => {
     ORDER BY ks.name, k.level, k.key_number
   `).all(ring.id);
 
-  // Checkout history (last 20 transactions involving physical keys on this ring)
   const checkoutHistory = db.prepare(`
     SELECT kt.*, pk.stamp_number,
            s.first_name, s.last_name
@@ -86,7 +87,7 @@ router.get('/:id', (req, res) => {
 });
 
 // ── Check-out ring to a person ─────────────────────────────────────────────
-router.post('/:id/checkout', (req, res) => {
+router.post('/:id/checkout', requirePermission('ring_checkout.operate'), (req, res) => {
   const ring = db.prepare('SELECT * FROM keyrings WHERE id = ?').get(req.params.id);
   if (!ring) { req.session.flash = { error: 'Keyring not found.' }; return res.redirect('/ring-checkout'); }
 
@@ -107,7 +108,7 @@ router.post('/:id/checkout', (req, res) => {
 });
 
 // ── Check-in ring ──────────────────────────────────────────────────────────
-router.post('/:id/checkin', (req, res) => {
+router.post('/:id/checkin', requirePermission('ring_checkout.operate'), (req, res) => {
   const ring = db.prepare('SELECT * FROM keyrings WHERE id = ?').get(req.params.id);
   if (!ring) { req.session.flash = { error: 'Keyring not found.' }; return res.redirect('/ring-checkout'); }
   if (!ring.current_holder_staff_id) {

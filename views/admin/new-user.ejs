@@ -16,6 +16,18 @@
       <p class="field-hint">Optional. If provided, a welcome email will be sent automatically.</p>
     </div>
     <div class="form-group">
+      <label for="role_id">Role <span class="required">*</span></label>
+      <select id="role_id" name="role_id" required>
+        <option value="">— Select a role —</option>
+        <% roles.forEach(r => { %>
+          <option value="<%= r.id %>"><%= r.label %><%= r.description ? ` — ${r.description}` : '' %></option>
+        <% }) %>
+      </select>
+      <p class="field-hint">The role determines what this user can see and do.
+        <% if (userCan('admin.roles')) { %><a href="/admin/roles" target="_blank">View roles →</a><% } %>
+      </p>
+    </div>
+    <div class="form-group">
       <label for="password">Password <span class="required">*</span></label>
       <input type="password" id="password" name="password" required autocomplete="new-password" minlength="8">
       <p class="field-hint">Minimum 8 characters.</p>

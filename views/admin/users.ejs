@@ -1,13 +1,20 @@
 <%- include('../partials/header') %>
 <div class="page-header">
   <h1>Admin Users</h1>
+  <% if (userCan('admin.users')) { %>
   <a href="/admin/users/new" class="btn btn-primary">+ New Admin User</a>
+  <% } %>
 </div>
 
 <div class="card card-form">
   <table class="table">
     <thead>
-      <tr><th>Username</th><th>Created</th><th></th></tr>
+      <tr>
+        <th>Username</th>
+        <th>Role</th>
+        <th>Created</th>
+        <th></th>
+      </tr>
     </thead>
     <tbody>
       <% users.forEach(u => { %>
@@ -16,19 +23,37 @@
           <strong><%= u.username %></strong>
           <% if (u.id === user.id) { %><span class="badge badge-blue badge-sm">you</span><% } %>
         </td>
+        <td>
+          <% if (u.role_label) { %>
+            <span class="badge badge-sm <%= u.is_system ? 'badge-blue' : '' %>" style="<%= !u.is_system ? 'background:var(--color-border);color:var(--color-text-secondary)' : '' %>">
+              <%= u.role_label %>
+            </span>
+          <% } else { %>
+            <span class="text-muted">—</span>
+          <% } %>
+        </td>
         <td class="text-muted"><%= u.created_at %></td>
         <td class="text-right">
-          <a href="/admin/users/<%= u.id %>/change-password" class="btn btn-sm btn-outline">Change Password</a>
-          <% if (u.id !== user.id) { %>
-            <form action="/admin/users/<%= u.id %>/delete" method="POST" style="display:inline">
-              <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete admin user &quot;<%= u.username %>&quot;? This cannot be undone.')">Delete</button>
-            </form>
+          <% if (userCan('admin.users')) { %>
+            <a href="/admin/users/<%= u.id %>/edit-role" class="btn btn-sm btn-outline">Change Role</a>
+            <a href="/admin/users/<%= u.id %>/change-password" class="btn btn-sm btn-outline">Change Password</a>
+            <% if (u.id !== user.id) { %>
+              <form action="/admin/users/<%= u.id %>/delete" method="POST" style="display:inline">
+                <button type="submit" class="btn btn-sm btn-danger"
+                  onclick="return confirm('Delete admin user &quot;<%= u.username %>&quot;? This cannot be undone.')">Delete</button>
+              </form>
+            <% } %>
           <% } %>
         </td>
       </tr>
       <% }) %>
     </tbody>
   </table>
-  <p class="field-hint" style="padding: 1rem 1.5rem 0;">Admin users have full read/write access to all data. Sessions expire after 8 hours of inactivity.</p>
+  <p class="field-hint" style="padding:1rem 1.5rem 0">
+    Permissions are determined by each user's assigned role.
+    <% if (userCan('admin.roles')) { %>
+      <a href="/admin/roles">Manage roles →</a>
+    <% } %>
+  </p>
 </div>
 <%- include('../partials/footer') %>

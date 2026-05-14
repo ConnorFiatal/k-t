@@ -36,7 +36,25 @@ router.post('/login', loginLimiter, (req, res) => {
   }
 
   // Issue 4 — regenerate session ID after login to prevent session fixation
-  const userData = { id: user.id, username: user.username };
+  const roleRow = user.role_id
+    ? db.prepare('SELECT id, name, is_system FROM roles WHERE id = ?').get(user.role_id)
+    : null;
+  const isSuperAdmin = roleRow?.name === 'super_admin';
+  const permissions = isSuperAdmin
+    ? []
+    : (db.prepare('SELECT permission FROM role_permissions WHERE role_id = ?').all(user.role_id ?? 0)
+        .map(r => r.permission));
+
+  const userData = {
+    id: user.id,
+    username: user.username,
+    role_id: user.role_id ?? null,
+    role_name: roleRow?.name ?? null,
+    role_label: roleRow ? db.prepare('SELECT label FROM roles WHERE id = ?').get(user.role_id)?.label : null,
+    is_super_admin: isSuperAdmin,
+    permissions,
+  };
+
   req.session.regenerate((err) => {
     if (err) return res.redirect('/login');
     req.session.user = userData;

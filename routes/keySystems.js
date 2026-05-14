@@ -1,9 +1,10 @@
 const express = require('express');
 const { db, auditLog } = require('../db');
+const { requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', requirePermission('key_systems.view'), (req, res) => {
   const systems = db.prepare(`
     SELECT ks.*, COUNT(k.id) AS key_count
     FROM key_systems ks LEFT JOIN keys k ON k.key_system_id = ks.id
@@ -12,11 +13,11 @@ router.get('/', (req, res) => {
   res.render('key-systems/index', { title: 'Key Systems', systems });
 });
 
-router.get('/new', (req, res) => {
+router.get('/new', requirePermission('key_systems.create'), (req, res) => {
   res.render('key-systems/form', { title: 'New Key System', system: null, action: '/key-systems' });
 });
 
-router.post('/', (req, res) => {
+router.post('/', requirePermission('key_systems.create'), (req, res) => {
   const { name, description, manufacturer, keyway, notes } = req.body;
   if (!name) { req.session.flash = { error: 'System name is required.' }; return res.redirect('/key-systems/new'); }
   try {
@@ -31,7 +32,7 @@ router.post('/', (req, res) => {
   }
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', requirePermission('key_systems.view'), (req, res) => {
   const system = db.prepare('SELECT * FROM key_systems WHERE id = ?').get(req.params.id);
   if (!system) { req.session.flash = { error: 'Key system not found.' }; return res.redirect('/key-systems'); }
 
@@ -45,19 +46,17 @@ router.get('/:id', (req, res) => {
     ORDER BY k.level, k.key_number
   `).all(system.id);
 
-  // Build nested tree
   const treeHtml = buildTreeHtml(allKeys, null, 0);
-
   res.render('key-systems/detail', { title: system.name, system, allKeys, treeHtml });
 });
 
-router.get('/:id/edit', (req, res) => {
+router.get('/:id/edit', requirePermission('key_systems.edit'), (req, res) => {
   const system = db.prepare('SELECT * FROM key_systems WHERE id = ?').get(req.params.id);
   if (!system) { req.session.flash = { error: 'Key system not found.' }; return res.redirect('/key-systems'); }
   res.render('key-systems/form', { title: `Edit ${system.name}`, system, action: `/key-systems/${system.id}` });
 });
 
-router.post('/:id', (req, res) => {
+router.post('/:id', requirePermission('key_systems.edit'), (req, res) => {
   const system = db.prepare('SELECT * FROM key_systems WHERE id = ?').get(req.params.id);
   if (!system) { req.session.flash = { error: 'Key system not found.' }; return res.redirect('/key-systems'); }
   const { name, description, manufacturer, keyway, notes } = req.body;
@@ -74,7 +73,7 @@ router.post('/:id', (req, res) => {
   }
 });
 
-router.post('/:id/delete', (req, res) => {
+router.post('/:id/delete', requirePermission('key_systems.delete'), (req, res) => {
   const system = db.prepare('SELECT * FROM key_systems WHERE id = ?').get(req.params.id);
   if (!system) { req.session.flash = { error: 'Key system not found.' }; return res.redirect('/key-systems'); }
   const keyCount = db.prepare('SELECT COUNT(*) AS c FROM keys WHERE key_system_id = ?').get(system.id).c;
@@ -88,7 +87,6 @@ router.post('/:id/delete', (req, res) => {
   res.redirect('/key-systems');
 });
 
-const LEVEL_ORDER = { 'GMK': 0, 'MK': 1, 'SUB_MASTER': 2, 'CHANGE': 3 };
 const LEVEL_LABEL = { 'GMK': 'Grand Master', 'MK': 'Master', 'SUB_MASTER': 'Sub-Master', 'CHANGE': 'Change' };
 
 function buildTreeHtml(allKeys, parentId, depth) {

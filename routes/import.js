@@ -3,6 +3,9 @@ const router = express.Router();
 const multer = require('multer');
 const { parse } = require('csv-parse/sync');
 const { db, auditLog } = require('../db');
+const { requirePermission, requirePlanFeature } = require('../middleware/auth');
+
+router.use(requirePlanFeature('feature_csv_import_export'), requirePermission('data.import'));
 
 // ── Multer: memory storage (we parse the buffer directly) ──────────────────
 const upload = multer({
