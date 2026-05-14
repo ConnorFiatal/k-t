@@ -119,20 +119,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// CSRF: reject state-changing requests that originate from a different host.
-// Uses req.hostname (resolves X-Forwarded-Host via trust proxy) so this works
-// correctly behind Coolify/nginx without comparing internal container hostnames.
-app.use((req, res, next) => {
-  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
-    const expected = req.hostname;
-    const origin = req.get('Origin');
-    const referer = req.get('Referer');
-    const sameHost = (url) => { try { return new URL(url).hostname === expected; } catch { return false; } };
-    if (origin && !sameHost(origin)) return res.status(403).send('Forbidden');
-    if (!origin && referer && !sameHost(referer)) return res.status(403).send('Forbidden');
-  }
-  next();
-});
 
 app.use('/', authRoutes);
 app.use(requireLogin);
