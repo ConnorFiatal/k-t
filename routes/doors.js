@@ -1,5 +1,5 @@
 const express = require('express');
-const { db } = require('../db');
+const { db, auditLog } = require('../db');
 
 const router = express.Router();
 
@@ -35,6 +35,7 @@ router.post('/', (req, res) => {
   }
   const result = db.prepare('INSERT INTO doors (name, door_number, location, building, floor, access_type, notes) VALUES (?, ?, ?, ?, ?, ?, ?)')
     .run(name.trim(), door_number || null, location || null, building || null, floor || null, access_type, notes || null);
+  auditLog('CREATE', 'DOOR', result.lastInsertRowid, name.trim(), null, null, req.session.user.username);
   req.session.flash = { success: `Door "${name}" created.` };
   res.redirect(`/doors/${result.lastInsertRowid}`);
 });
@@ -75,6 +76,7 @@ router.post('/:id', (req, res) => {
   }
   db.prepare('UPDATE doors SET name=?, door_number=?, location=?, building=?, floor=?, access_type=?, notes=? WHERE id=?')
     .run(name.trim(), door_number || null, location || null, building || null, floor || null, access_type, notes || null, door.id);
+  auditLog('UPDATE', 'DOOR', door.id, name.trim(), null, null, req.session.user.username);
   req.session.flash = { success: 'Door updated.' };
   res.redirect(`/doors/${door.id}`);
 });
@@ -89,6 +91,7 @@ router.post('/:id/delete', (req, res) => {
     return res.redirect(`/doors/${door.id}`);
   }
   db.prepare('DELETE FROM doors WHERE id = ?').run(door.id);
+  auditLog('DELETE', 'DOOR', door.id, door.name, null, null, req.session.user.username);
   req.session.flash = { success: `Door "${door.name}" deleted.` };
   res.redirect('/doors');
 });

@@ -30,6 +30,7 @@ router.post('/', (req, res) => {
   }
   const result = db.prepare('INSERT INTO system_accounts (system_name, account_username, account_password, url, category, notes) VALUES (?, ?, ?, ?, ?, ?)')
     .run(system_name.trim(), account_username.trim(), account_password || null, url || null, category || null, notes || null);
+  auditLog('CREATE', 'SYSTEM_ACCOUNT', result.lastInsertRowid, system_name.trim(), null, null, req.session.user.username);
   req.session.flash = { success: `Account "${system_name}" created.` };
   res.redirect(`/system-accounts/${result.lastInsertRowid}`);
 });
@@ -53,8 +54,9 @@ router.get('/:id', (req, res) => {
 
 // Issue 1 — serve password only on explicit authenticated request, never in page HTML
 router.get('/:id/secret', (req, res) => {
-  const account = db.prepare('SELECT account_password FROM system_accounts WHERE id = ?').get(req.params.id);
+  const account = db.prepare('SELECT id, system_name, account_password FROM system_accounts WHERE id = ?').get(req.params.id);
   if (!account) return res.status(404).json({ error: 'Not found' });
+  auditLog('VIEW_SECRET', 'SYSTEM_ACCOUNT', account.id, account.system_name, null, null, req.session.user.username);
   res.json({ password: account.account_password || '' });
 });
 
@@ -76,12 +78,12 @@ router.post('/:id', (req, res) => {
 
   // Issue 2 — only overwrite the stored password if a new one was actually typed;
   // leaving the field blank preserves the existing value
-  const newPassword = account_password && account_password.trim()
-    ? account_password.trim()
-    : account.account_password;
+  const passwordChanged = !!(account_password && account_password.trim());
+  const newPassword = passwordChanged ? account_password.trim() : account.account_password;
 
   db.prepare('UPDATE system_accounts SET system_name=?, account_username=?, account_password=?, url=?, category=?, notes=? WHERE id=?')
     .run(system_name.trim(), account_username.trim(), newPassword || null, url || null, category || null, notes || null, account.id);
+  auditLog('UPDATE', 'SYSTEM_ACCOUNT', account.id, system_name.trim(), null, null, req.session.user.username, passwordChanged ? 'Password changed' : null);
   req.session.flash = { success: 'Account updated.' };
   res.redirect(`/system-accounts/${account.id}`);
 });

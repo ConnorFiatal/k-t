@@ -1,5 +1,5 @@
 const express = require('express');
-const { db } = require('../db');
+const { db, auditLog } = require('../db');
 
 const router = express.Router();
 
@@ -26,6 +26,7 @@ router.post('/', (req, res) => {
   try {
     const result = db.prepare('INSERT INTO fob_profiles (name, description, notes) VALUES (?, ?, ?)')
       .run(name.trim(), description || null, notes || null);
+    auditLog('CREATE', 'FOB_PROFILE', result.lastInsertRowid, name.trim(), null, null, req.session.user.username);
     req.session.flash = { success: `FOB profile "${name}" created.` };
     res.redirect(`/fob-profiles/${result.lastInsertRowid}`);
   } catch {
@@ -69,6 +70,7 @@ router.post('/:id', (req, res) => {
   try {
     db.prepare('UPDATE fob_profiles SET name=?, description=?, notes=? WHERE id=?')
       .run(name.trim(), description || null, notes || null, profile.id);
+    auditLog('UPDATE', 'FOB_PROFILE', profile.id, name.trim(), null, null, req.session.user.username);
     req.session.flash = { success: 'FOB profile updated.' };
     res.redirect(`/fob-profiles/${profile.id}`);
   } catch {
@@ -86,6 +88,7 @@ router.post('/:id/delete', (req, res) => {
     return res.redirect(`/fob-profiles/${profile.id}`);
   }
   db.prepare('DELETE FROM fob_profiles WHERE id = ?').run(profile.id);
+  auditLog('DELETE', 'FOB_PROFILE', profile.id, profile.name, null, null, req.session.user.username);
   req.session.flash = { success: `FOB profile "${profile.name}" deleted.` };
   res.redirect('/fob-profiles');
 });
@@ -97,6 +100,8 @@ router.post('/:id/doors/add', (req, res) => {
   if (!door_id) { req.session.flash = { error: 'Select a door.' }; return res.redirect(`/fob-profiles/${profile.id}`); }
   try {
     db.prepare('INSERT INTO fob_profile_doors (fob_profile_id, door_id) VALUES (?, ?)').run(profile.id, door_id);
+    const door = db.prepare('SELECT name FROM doors WHERE id = ?').get(door_id);
+    auditLog('ADD_DOOR', 'FOB_PROFILE', profile.id, profile.name, null, null, req.session.user.username, door?.name || door_id);
     req.session.flash = { success: 'Door added to profile.' };
   } catch {
     req.session.flash = { error: 'That door is already in this profile.' };
@@ -107,7 +112,9 @@ router.post('/:id/doors/add', (req, res) => {
 router.post('/:id/doors/:doorId/remove', (req, res) => {
   const profile = db.prepare('SELECT * FROM fob_profiles WHERE id = ?').get(req.params.id);
   if (!profile) { req.session.flash = { error: 'Profile not found.' }; return res.redirect('/fob-profiles'); }
+  const door = db.prepare('SELECT name FROM doors WHERE id = ?').get(req.params.doorId);
   db.prepare('DELETE FROM fob_profile_doors WHERE fob_profile_id = ? AND door_id = ?').run(profile.id, req.params.doorId);
+  auditLog('REMOVE_DOOR', 'FOB_PROFILE', profile.id, profile.name, null, null, req.session.user.username, door?.name || req.params.doorId);
   req.session.flash = { success: 'Door removed from profile.' };
   res.redirect(`/fob-profiles/${profile.id}`);
 });

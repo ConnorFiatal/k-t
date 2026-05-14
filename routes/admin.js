@@ -1,6 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const { db } = require('../db');
+const { db, auditLog } = require('../db');
 const { sendEmail } = require('./email');
 
 const router = express.Router();
@@ -31,7 +31,8 @@ router.post('/users', async (req, res) => {
   try {
     const hash = bcrypt.hashSync(password, 10);
     const emailVal = email?.trim() || null;
-    db.prepare('INSERT INTO admin_users (username, password_hash, email) VALUES (?, ?, ?)').run(username.trim(), hash, emailVal);
+    const result = db.prepare('INSERT INTO admin_users (username, password_hash, email) VALUES (?, ?, ?)').run(username.trim(), hash, emailVal);
+    auditLog('CREATE_USER', 'ADMIN_USER', result.lastInsertRowid, username.trim(), null, null, req.session.user.username);
     req.session.flash = { success: `Admin user "${username}" created.` };
 
     // Send welcome email if an address was provided
@@ -61,7 +62,9 @@ router.post('/users/:id/delete', (req, res) => {
     req.session.flash = { error: 'Cannot delete the last admin user.' };
     return res.redirect('/admin/users');
   }
+  const targetUser = db.prepare('SELECT id, username FROM admin_users WHERE id = ?').get(req.params.id);
   db.prepare('DELETE FROM admin_users WHERE id = ?').run(req.params.id);
+  if (targetUser) auditLog('DELETE_USER', 'ADMIN_USER', targetUser.id, targetUser.username, null, null, req.session.user.username);
   req.session.flash = { success: 'Admin user deleted.' };
   res.redirect('/admin/users');
 });
@@ -88,6 +91,8 @@ router.post('/users/:id/change-password', (req, res) => {
 
   const hash = bcrypt.hashSync(password, 10);
   db.prepare('UPDATE admin_users SET password_hash = ? WHERE id = ?').run(hash, user.id);
+  auditLog('CHANGE_PASSWORD', 'ADMIN_USER', user.id, user.username, null, null, req.session.user.username,
+    req.session.user.id === user.id ? 'Own password changed' : `Password changed by ${req.session.user.username}`);
   req.session.flash = { success: `Password updated for "${user.username}".` };
   res.redirect('/admin/users');
 });

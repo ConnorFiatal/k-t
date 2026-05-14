@@ -1,5 +1,5 @@
 const express = require('express');
-const { db } = require('../db');
+const { db, auditLog } = require('../db');
 
 const router = express.Router();
 
@@ -22,6 +22,7 @@ router.post('/', (req, res) => {
   try {
     const result = db.prepare('INSERT INTO key_systems (name, description, manufacturer, keyway, notes) VALUES (?, ?, ?, ?, ?)')
       .run(name.trim(), description || null, manufacturer || null, keyway || null, notes || null);
+    auditLog('CREATE', 'KEY_SYSTEM', result.lastInsertRowid, name.trim(), null, null, req.session.user.username);
     req.session.flash = { success: `Key system "${name}" created.` };
     res.redirect(`/key-systems/${result.lastInsertRowid}`);
   } catch {
@@ -64,6 +65,7 @@ router.post('/:id', (req, res) => {
   try {
     db.prepare('UPDATE key_systems SET name=?, description=?, manufacturer=?, keyway=?, notes=? WHERE id=?')
       .run(name.trim(), description || null, manufacturer || null, keyway || null, notes || null, system.id);
+    auditLog('UPDATE', 'KEY_SYSTEM', system.id, name.trim(), null, null, req.session.user.username);
     req.session.flash = { success: 'Key system updated.' };
     res.redirect(`/key-systems/${system.id}`);
   } catch {
@@ -81,6 +83,7 @@ router.post('/:id/delete', (req, res) => {
     return res.redirect(`/key-systems/${system.id}`);
   }
   db.prepare('DELETE FROM key_systems WHERE id = ?').run(system.id);
+  auditLog('DELETE', 'KEY_SYSTEM', system.id, system.name, null, null, req.session.user.username);
   req.session.flash = { success: `Key system "${system.name}" deleted.` };
   res.redirect('/key-systems');
 });

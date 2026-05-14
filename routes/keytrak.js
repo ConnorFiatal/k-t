@@ -27,6 +27,7 @@ router.post('/', (req, res) => {
   if (!ring_number) { req.session.flash = { error: 'Ring number is required.' }; return res.redirect('/keytrak/new'); }
   try {
     const result = db.prepare('INSERT INTO keyrings (ring_number, description, location, notes) VALUES (?, ?, ?, ?)').run(ring_number.trim(), description || null, location || null, notes || null);
+    auditLog('CREATE', 'KEYRING', result.lastInsertRowid, ring_number.trim(), null, null, req.session.user.username);
     req.session.flash = { success: `Keyring ${ring_number} created.` };
     res.redirect(`/keytrak/${result.lastInsertRowid}`);
   } catch {
@@ -99,6 +100,7 @@ router.post('/:id', (req, res) => {
   try {
     db.prepare('UPDATE keyrings SET ring_number=?, description=?, location=?, notes=? WHERE id=?')
       .run(ring_number.trim(), description || null, location || null, notes || null, keyring.id);
+    auditLog('UPDATE', 'KEYRING', keyring.id, ring_number.trim(), null, null, req.session.user.username);
     req.session.flash = { success: 'Keyring updated.' };
     res.redirect(`/keytrak/${keyring.id}`);
   } catch {

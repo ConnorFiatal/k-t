@@ -43,6 +43,8 @@ router.post('/', (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(first_name.trim(), last_name.trim(), employee_id || null, department || null, title || null, email || null, phone || null, start_date || null, notes || null);
 
+    const fullName = `${first_name.trim()} ${last_name.trim()}`;
+    auditLog('CREATE', 'STAFF', result.lastInsertRowid, fullName, result.lastInsertRowid, fullName, req.session.user.username);
     req.session.flash = { success: `Staff member ${first_name} ${last_name} created.` };
     res.redirect(`/staff/${result.lastInsertRowid}`);
   } catch (err) {
@@ -95,6 +97,8 @@ router.post('/:id', (req, res) => {
       WHERE id=?
     `).run(first_name.trim(), last_name.trim(), employee_id || null, department || null, title || null, email || null, phone || null, start_date || null, notes || null, staff.id);
 
+    const fullName = `${first_name.trim()} ${last_name.trim()}`;
+    auditLog('UPDATE', 'STAFF', staff.id, fullName, staff.id, fullName, req.session.user.username);
     req.session.flash = { success: 'Staff member updated.' };
     res.redirect(`/staff/${staff.id}`);
   } catch (err) {
@@ -119,6 +123,7 @@ router.post('/:id/reactivate', (req, res) => {
   if (!staff) { req.session.flash = { error: 'Staff member not found.' }; return res.redirect('/staff'); }
 
   db.prepare("UPDATE staff SET status='active', updated_at=CURRENT_TIMESTAMP WHERE id=?").run(staff.id);
+  auditLog('REACTIVATE', 'STAFF', staff.id, `${staff.first_name} ${staff.last_name}`, staff.id, `${staff.first_name} ${staff.last_name}`, req.session.user.username);
   req.session.flash = { success: `${staff.first_name} ${staff.last_name} reactivated.` };
   res.redirect(`/staff/${staff.id}`);
 });

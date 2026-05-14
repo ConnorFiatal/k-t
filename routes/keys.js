@@ -1,5 +1,5 @@
 const express = require('express');
-const { db } = require('../db');
+const { db, auditLog } = require('../db');
 
 const router = express.Router();
 
@@ -51,6 +51,8 @@ router.post('/', (req, res) => {
       INSERT INTO keys (key_system_id, key_number, level, parent_key_id, bitting, keyway, key_blank, notes)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(key_system_id, key_number.trim(), level, parent_key_id || null, bitting || null, keyway || null, key_blank || null, notes || null);
+    const sysName = db.prepare('SELECT name FROM key_systems WHERE id = ?').get(key_system_id)?.name || key_system_id;
+    auditLog('CREATE', 'KEY', result.lastInsertRowid, `${sysName} — ${key_number.trim()}`, null, null, req.session.user.username);
     req.session.flash = { success: `Key "${key_number}" created.` };
     res.redirect(`/keys/${result.lastInsertRowid}`);
   } catch {
@@ -109,6 +111,8 @@ router.post('/:id', (req, res) => {
     db.prepare(`
       UPDATE keys SET key_system_id=?, key_number=?, level=?, parent_key_id=?, bitting=?, keyway=?, key_blank=?, notes=? WHERE id=?
     `).run(key_system_id, key_number.trim(), level, parent_key_id || null, bitting || null, keyway || null, key_blank || null, notes || null, key.id);
+    const sysName = db.prepare('SELECT name FROM key_systems WHERE id = ?').get(key_system_id)?.name || key_system_id;
+    auditLog('UPDATE', 'KEY', key.id, `${sysName} — ${key_number.trim()}`, null, null, req.session.user.username);
     req.session.flash = { success: 'Key updated.' };
     res.redirect(`/keys/${key.id}`);
   } catch {
@@ -131,6 +135,7 @@ router.post('/:id/delete', (req, res) => {
     return res.redirect(`/keys/${key.id}`);
   }
   db.prepare('DELETE FROM keys WHERE id = ?').run(key.id);
+  auditLog('DELETE', 'KEY', key.id, `${key.system_name} — ${key.key_number}`, null, null, req.session.user.username);
   req.session.flash = { success: `Key "${key.key_number}" deleted.` };
   res.redirect(`/key-systems/${key.key_system_id}`);
 });
@@ -142,6 +147,9 @@ router.post('/:id/doors/add', (req, res) => {
   if (!door_id) { req.session.flash = { error: 'Select a door.' }; return res.redirect(`/keys/${key.id}`); }
   try {
     db.prepare('INSERT INTO key_door_access (key_id, door_id) VALUES (?, ?)').run(key.id, door_id);
+    const door = db.prepare('SELECT name FROM doors WHERE id = ?').get(door_id);
+    const sysName = db.prepare('SELECT name FROM key_systems WHERE id = ?').get(key.key_system_id)?.name || '';
+    auditLog('ADD_DOOR', 'KEY', key.id, `${sysName} — ${key.key_number}`, null, null, req.session.user.username, door?.name || door_id);
     req.session.flash = { success: 'Door added to key.' };
   } catch {
     req.session.flash = { error: 'That door is already assigned to this key.' };
@@ -152,7 +160,10 @@ router.post('/:id/doors/add', (req, res) => {
 router.post('/:id/doors/:doorId/remove', (req, res) => {
   const key = db.prepare('SELECT * FROM keys WHERE id = ?').get(req.params.id);
   if (!key) { req.session.flash = { error: 'Key not found.' }; return res.redirect('/keys'); }
+  const door = db.prepare('SELECT name FROM doors WHERE id = ?').get(req.params.doorId);
   db.prepare('DELETE FROM key_door_access WHERE key_id = ? AND door_id = ?').run(key.id, req.params.doorId);
+  const sysName = db.prepare('SELECT name FROM key_systems WHERE id = ?').get(key.key_system_id)?.name || '';
+  auditLog('REMOVE_DOOR', 'KEY', key.id, `${sysName} — ${key.key_number}`, null, null, req.session.user.username, door?.name || req.params.doorId);
   req.session.flash = { success: 'Door removed from key.' };
   res.redirect(`/keys/${key.id}`);
 });

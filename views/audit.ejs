@@ -4,28 +4,61 @@
 </div>
 
 <div class="card">
-  <form class="filter-bar" method="GET" action="/audit">
-    <input type="text" name="q" placeholder="Search resource or staff…" value="<%= filters.q || '' %>">
+  <form class="filter-bar" method="GET" action="/audit" style="flex-wrap:wrap;gap:0.5rem;">
+    <input type="text" name="q" placeholder="Search resource, staff, or notes…" value="<%= filters.q || '' %>" style="min-width:200px;">
+
     <select name="action">
       <option value="">All Actions</option>
-      <option value="GRANT" <%= filters.action === 'GRANT' ? 'selected' : '' %>>GRANT</option>
-      <option value="REVOKE" <%= filters.action === 'REVOKE' ? 'selected' : '' %>>REVOKE</option>
-      <option value="TERMINATE" <%= filters.action === 'TERMINATE' ? 'selected' : '' %>>TERMINATE</option>
+      <% [
+        ['CREATE','Create'],['UPDATE','Update'],['DELETE','Delete'],
+        ['GRANT','Grant'],['REVOKE','Revoke'],
+        ['TERMINATE','Terminate'],['REACTIVATE','Reactivate'],
+        ['ASSIGN_KEY','Assign Key'],['REMOVE_KEY','Remove Key'],
+        ['ASSIGN_FOB','Assign FOB'],['REMOVE_FOB','Remove FOB'],
+        ['ADD_DOOR','Add Door'],['REMOVE_DOOR','Remove Door'],
+        ['CHECKOUT','Checkout'],['CHECKIN','Check-in'],
+        ['ISSUE','Issue'],['RETURN','Return'],
+        ['LOST','Lost'],['DAMAGED','Damaged'],['DESTROYED','Destroyed'],['REPLACE','Replace'],
+        ['CREATE_USER','Create Admin User'],['DELETE_USER','Delete Admin User'],['CHANGE_PASSWORD','Change Password'],
+        ['VIEW_SECRET','View Secret'],
+      ].forEach(([val, label]) => { %>
+        <option value="<%= val %>" <%= filters.action === val ? 'selected' : '' %>><%= label %></option>
+      <% }); %>
     </select>
+
     <select name="resource_type">
       <option value="">All Types</option>
-      <option value="SAFE" <%= filters.resource_type === 'SAFE' ? 'selected' : '' %>>Safe</option>
-      <option value="KEYRING" <%= filters.resource_type === 'KEYRING' ? 'selected' : '' %>>Keyring</option>
-      <option value="SYSTEM_ACCOUNT" <%= filters.resource_type === 'SYSTEM_ACCOUNT' ? 'selected' : '' %>>System Account</option>
-      <option value="STAFF" <%= filters.resource_type === 'STAFF' ? 'selected' : '' %>>Staff</option>
+      <% [
+        ['STAFF','Staff'],['SAFE','Safe'],['KEYRING','Keyring'],
+        ['SYSTEM_ACCOUNT','System Account'],['ADMIN_USER','Admin User'],
+        ['KEY_SYSTEM','Key System'],['KEY','Key'],['DOOR','Door'],
+        ['FOB_PROFILE','FOB Profile'],['PHYSICAL_KEY','Physical Key'],
+      ].forEach(([val, label]) => { %>
+        <option value="<%= val %>" <%= filters.resource_type === val ? 'selected' : '' %>><%= label %></option>
+      <% }); %>
     </select>
+
+    <select name="performed_by">
+      <option value="">All Users</option>
+      <% performers.forEach(u => { %>
+        <option value="<%= u %>" <%= filters.performed_by === u ? 'selected' : '' %>><%= u %></option>
+      <% }); %>
+    </select>
+
+    <input type="date" name="date_from" value="<%= filters.date_from || '' %>" title="From date" style="width:140px;">
+    <input type="date" name="date_to"   value="<%= filters.date_to   || '' %>" title="To date"   style="width:140px;">
+
     <select name="limit">
-      <option value="100" <%= limit == 100 ? 'selected' : '' %>>Last 100</option>
-      <option value="250" <%= limit == 250 ? 'selected' : '' %>>Last 250</option>
-      <option value="500" <%= limit == 500 ? 'selected' : '' %>>Last 500</option>
+      <option value="100"  <%= limit == 100  ? 'selected' : '' %>>Last 100</option>
+      <option value="250"  <%= limit == 250  ? 'selected' : '' %>>Last 250</option>
+      <option value="500"  <%= limit == 500  ? 'selected' : '' %>>Last 500</option>
+      <option value="1000" <%= limit == 1000 ? 'selected' : '' %>>Last 1 000</option>
+      <option value="2000" <%= limit == 2000 ? 'selected' : '' %>>Last 2 000</option>
     </select>
+
     <button type="submit" class="btn btn-outline">Filter</button>
     <a href="/audit" class="btn btn-ghost">Reset</a>
+    <a href="/audit/export?<%= new URLSearchParams(Object.fromEntries(Object.entries(filters).filter(([,v])=>v))).toString() %>" class="btn btn-ghost">Export CSV</a>
   </form>
 
   <% if (entries.length === 0) { %>
@@ -45,10 +78,20 @@
       </tr>
     </thead>
     <tbody>
-      <% entries.forEach(e => { %>
+      <% entries.forEach(e => {
+        const actionColor = {
+          GRANT: 'green', REACTIVATE: 'green', CREATE: 'blue', CREATE_USER: 'blue',
+          REVOKE: 'red', TERMINATE: 'red', DELETE: 'red', DELETE_USER: 'red',
+          LOST: 'red', DAMAGED: 'red', DESTROYED: 'red',
+          UPDATE: 'yellow', CHANGE_PASSWORD: 'yellow', REPLACE: 'yellow',
+          ISSUE: 'teal', CHECKOUT: 'teal', ASSIGN_KEY: 'teal', ASSIGN_FOB: 'teal', ADD_DOOR: 'teal',
+          RETURN: 'gray', CHECKIN: 'gray', REMOVE_KEY: 'gray', REMOVE_FOB: 'gray', REMOVE_DOOR: 'gray',
+          VIEW_SECRET: 'purple',
+        }[e.action] || 'gray';
+      %>
       <tr>
         <td class="text-muted text-sm nowrap"><%= e.performed_at %></td>
-        <td><span class="badge badge-<%= e.action === 'GRANT' ? 'green' : e.action === 'REVOKE' ? 'red' : 'gray' %>"><%= e.action %></span></td>
+        <td><span class="badge badge-<%= actionColor %>"><%= e.action %></span></td>
         <td><span class="badge badge-outline"><%= e.resource_type %></span></td>
         <td><%= e.resource_name || '—' %></td>
         <td>

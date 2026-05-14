@@ -10,3 +10,6 @@ data/*.db-shm
 
 # User uploads
 public/uploads/
+
+# Claude Code worktrees
+.claude/worktrees/

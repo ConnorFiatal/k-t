@@ -23,6 +23,7 @@ router.post('/', (req, res) => {
     return res.redirect('/safes/new');
   }
   const result = db.prepare('INSERT INTO safes (name, location, combination, notes) VALUES (?, ?, ?, ?)').run(name.trim(), location || null, combination.trim(), notes || null);
+  auditLog('CREATE', 'SAFE', result.lastInsertRowid, name.trim(), null, null, req.session.user.username);
   req.session.flash = { success: `Safe "${name}" created.` };
   res.redirect(`/safes/${result.lastInsertRowid}`);
 });
@@ -60,8 +61,10 @@ router.post('/:id', (req, res) => {
     return res.redirect(`/safes/${safe.id}/edit`);
   }
 
+  const combinationChanged = combination.trim() !== safe.combination;
   db.prepare('UPDATE safes SET name=?, location=?, combination=?, notes=? WHERE id=?')
     .run(name.trim(), location || null, combination.trim(), notes || null, safe.id);
+  auditLog('UPDATE', 'SAFE', safe.id, name.trim(), null, null, req.session.user.username, combinationChanged ? 'Combination changed' : null);
   req.session.flash = { success: 'Safe updated.' };
   res.redirect(`/safes/${safe.id}`);
 });
