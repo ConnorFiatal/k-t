@@ -1,12 +1,15 @@
-data/*.db-shm
-data/*.db-wal
-node_modules/
-node_modules/
-*.log
-server.err
+# Environment / secrets
+.env
+.env.*
+
 # SQLite runtime files
 data/*.db-wal
 data/*.db-shm
+
+# Node
+node_modules/
+*.log
+server.err
 
 # User uploads
 public/uploads/
