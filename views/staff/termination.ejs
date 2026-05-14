@@ -23,13 +23,21 @@
   </div>
 </div>
 
-<% if (totalAccess === 0) { %>
+<% if (outstandingKeys.length > 0) { %>
+  <div class="checklist-warning" style="border-color: #dc2626; background: #fef2f2;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <strong style="color:#dc2626;"><%= outstandingKeys.length %> physical key cop<%= outstandingKeys.length !== 1 ? 'ies' : 'y' %> must be returned before termination.</strong>
+    See the Physical Key Copies section below.
+  </div>
+<% } %>
+
+<% if (totalAccess === 0 && outstandingKeys.length === 0) { %>
   <div class="checklist-complete">
     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
     <h2>All Clear</h2>
     <p><%= staff.first_name %> <%= staff.last_name %> has no active access to revoke.</p>
   </div>
-<% } else { %>
+<% } else if (totalAccess > 0) { %>
   <div class="checklist-warning">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
     <strong><%= totalAccess %> active access item<%= totalAccess !== 1 ? 's' : '' %> found.</strong>
@@ -104,6 +112,42 @@
           <form action="/keytrak/<%= k.keyring_id %>/revoke/<%= staff.id %>" method="POST" style="display:inline">
             <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Revoke keyring authorization?')">Revoke</button>
           </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<!-- Physical Key Copies -->
+<div class="card" style="<%= outstandingKeys.length > 0 ? 'border: 2px solid #dc2626;' : '' %>">
+  <div class="card-header">
+    <h2>
+      <% if (outstandingKeys.length === 0) { %>
+        <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <% } %>
+      Physical Key Copies <span class="count-badge count-badge-<%= outstandingKeys.length > 0 ? 'red' : 'green' %>"><%= outstandingKeys.length %></span>
+    </h2>
+  </div>
+  <% if (outstandingKeys.length === 0) { %>
+    <p class="empty-state-sm">No outstanding key copies — nothing to return.</p>
+  <% } else { %>
+  <p style="padding: 0 1.25rem; margin-bottom: 0.75rem; color: #dc2626; font-size: 0.875rem;">
+    <strong>Action required:</strong> These key copies must be physically collected and marked as returned before termination is complete.
+  </p>
+  <table class="table">
+    <thead><tr><th>Stamp #</th><th>Key</th><th>System</th><th>Issued</th><th>Expiry</th><th></th></tr></thead>
+    <tbody>
+      <% outstandingKeys.forEach(k => { %>
+      <tr>
+        <td><a href="/physical-keys/<%= k.physical_key_id %>"><%= k.stamp_number %></a></td>
+        <td class="text-muted"><%= k.key_number %></td>
+        <td class="text-muted"><%= k.system_name %></td>
+        <td class="text-muted text-sm"><%= k.issued_date %></td>
+        <td class="text-muted text-sm"><%= k.expiry_date || '—' %></td>
+        <td class="text-right">
+          <a href="/physical-keys/<%= k.physical_key_id %>" class="btn btn-sm btn-warning">Process Return</a>
         </td>
       </tr>
       <% }) %>

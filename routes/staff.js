@@ -148,8 +148,18 @@ router.get('/:id/termination', requirePermission('staff.view'), (req, res) => {
     JOIN system_accounts a ON a.id = saa.account_id WHERE saa.staff_id = ?
   `).all(staff.id);
 
+  const outstandingKeys = db.prepare(`
+    SELECT ka.id AS agreement_id, pk.id AS physical_key_id, pk.stamp_number,
+           k.key_number, ks.name AS system_name, ka.issued_date, ka.expiry_date
+    FROM key_agreements ka
+    JOIN physical_keys pk ON pk.id = ka.physical_key_id
+    JOIN keys k ON k.id = pk.key_type_id
+    JOIN key_systems ks ON ks.id = k.key_system_id
+    WHERE ka.staff_id = ? AND ka.returned_date IS NULL
+  `).all(staff.id);
+
   const totalAccess = safeAccess.length + keyrings.length + systemAccounts.length;
-  res.render('staff/termination', { title: `Termination Checklist — ${staff.first_name} ${staff.last_name}`, staff, safeAccess, keyrings, systemAccounts, totalAccess });
+  res.render('staff/termination', { title: `Termination Checklist — ${staff.first_name} ${staff.last_name}`, staff, safeAccess, keyrings, systemAccounts, outstandingKeys, totalAccess });
 });
 
 router.post('/:id/revoke-all', requirePermission('staff.edit'), (req, res) => {
