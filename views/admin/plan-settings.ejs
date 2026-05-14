@@ -1,9 +1,6 @@
 <%- include('../partials/header') %>
 <div class="page-header">
   <h1>Plan Settings</h1>
-  <p class="text-muted" style="margin-top:0.25rem;font-size:0.875rem">
-    All settings are configured via environment variables on the server.
-  </p>
 </div>
 
 <%
@@ -17,9 +14,9 @@
   ];
 
   const limitList = [
-    { key: 'max_admin_users',      label: 'Max Admin Users',            env: 'PLAN_MAX_ADMIN_USERS',        hint: '0 = unlimited' },
-    { key: 'max_buildings',         label: 'Max Buildings',              env: 'PLAN_MAX_BUILDINGS',           hint: '0 = unlimited' },
-    { key: 'audit_retention_days',  label: 'Audit Log Retention',        env: 'PLAN_AUDIT_RETENTION_DAYS',    hint: 'days' },
+    { key: 'max_admin_users',      label: 'Max Admin Users',      hint: '0 = unlimited' },
+    { key: 'max_buildings',        label: 'Max Buildings',         hint: '0 = unlimited' },
+    { key: 'audit_retention_days', label: 'Audit Log Retention',  hint: 'days' },
   ];
 %>
 
@@ -27,7 +24,6 @@
 <div class="card" style="margin-bottom:1.5rem">
   <div style="padding:1.25rem 1.5rem 0.75rem;border-bottom:1px solid var(--color-border)">
     <h2 style="font-size:1rem;margin:0">Feature Modules</h2>
-    <p class="field-hint" style="margin:0.3rem 0 0">Controlled by <code>PLAN_LICENSED_*</code> environment variables.</p>
   </div>
   <div style="padding:1rem 1.5rem">
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0.6rem">
@@ -45,7 +41,6 @@
         <div>
           <div style="font-weight:600;font-size:0.875rem"><%= f.label %></div>
           <div class="text-muted" style="font-size:0.78rem;margin-top:0.15rem"><%= f.desc %></div>
-          <code class="env-key">PLAN_LICENSED_<%= f.key.toUpperCase() %></code>
         </div>
       </div>
       <% }); %>
@@ -57,7 +52,6 @@
 <div class="card" style="margin-bottom:1.5rem">
   <div style="padding:1.25rem 1.5rem 0.75rem;border-bottom:1px solid var(--color-border)">
     <h2 style="font-size:1rem;margin:0">Limits</h2>
-    <p class="field-hint" style="margin:0.3rem 0 0">Controlled by <code>PLAN_*</code> environment variables. 0 = unlimited.</p>
   </div>
   <div style="padding:1.25rem 1.5rem">
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem">
@@ -68,7 +62,6 @@
       <div class="limit-display-card">
         <div class="limit-display-value"><%= display %></div>
         <div style="font-weight:500;font-size:0.85rem"><%= lf.label %></div>
-        <code class="env-key"><%= lf.env %></code>
       </div>
       <% }); %>
     </div>
@@ -117,13 +110,6 @@
   margin-bottom: 0.2rem;
   color: var(--color-primary, #2563eb);
 }
-.env-key {
-  display: inline-block;
-  margin-top: 0.35rem;
-  font-size: 0.7rem;
-  color: var(--color-muted);
-  background: transparent;
-  letter-spacing: 0.01em;
-}
+
 </style>
 <%- include('../partials/footer') %>
