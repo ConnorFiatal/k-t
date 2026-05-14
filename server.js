@@ -15,6 +15,8 @@ if (!process.env.ENCRYPTION_KEY) {
 }
 
 const { requireLogin, userCan } = require('./middleware/auth');
+const { accessLog } = require('./middleware/accessLog');
+const { globalLimiter } = require('./middleware/rateLimiter');
 const authRoutes = require('./routes/auth');
 const rolesRoutes = require('./routes/roles');
 const staffRoutes = require('./routes/staff');
@@ -65,6 +67,7 @@ app.use(helmet({
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(globalLimiter);
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
@@ -77,6 +80,8 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production',
   }
 }));
+
+app.use(accessLog);
 
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;

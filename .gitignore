@@ -11,6 +11,9 @@ node_modules/
 *.log
 server.err
 
+# Runtime log files
+logs/
+
 # User uploads
 public/uploads/
 uploads/

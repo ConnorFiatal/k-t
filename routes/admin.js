@@ -6,6 +6,15 @@ const { requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
 
+function validatePassword(pw) {
+  if (!pw || pw.length < 12)          return 'Password must be at least 12 characters.';
+  if (!/[A-Z]/.test(pw))              return 'Password must contain at least one uppercase letter.';
+  if (!/[a-z]/.test(pw))              return 'Password must contain at least one lowercase letter.';
+  if (!/[0-9]/.test(pw))              return 'Password must contain at least one number.';
+  if (!/[^A-Za-z0-9]/.test(pw))      return 'Password must contain at least one special character.';
+  return null;
+}
+
 // ── Admin Users ────────────────────────────────────────────────────────────
 
 router.get('/users', requirePermission('admin.users'), (req, res) => {
@@ -33,8 +42,9 @@ router.post('/users', requirePermission('admin.users'), async (req, res) => {
     req.session.flash = { error: 'Passwords do not match.' };
     return res.redirect('/admin/users/new');
   }
-  if (password.length < 8) {
-    req.session.flash = { error: 'Password must be at least 8 characters.' };
+  const pwError = validatePassword(password);
+  if (pwError) {
+    req.session.flash = { error: pwError };
     return res.redirect('/admin/users/new');
   }
 
@@ -128,13 +138,14 @@ router.post('/users/:id/change-password', requirePermission('admin.users'), (req
     req.session.flash = { error: 'Passwords do not match or are empty.' };
     return res.redirect(`/admin/users/${user.id}/change-password`);
   }
-  if (password.length < 8) {
-    req.session.flash = { error: 'Password must be at least 8 characters.' };
+  const pwError = validatePassword(password);
+  if (pwError) {
+    req.session.flash = { error: pwError };
     return res.redirect(`/admin/users/${user.id}/change-password`);
   }
 
   const hash = bcrypt.hashSync(password, 12);
-  db.prepare('UPDATE admin_users SET password_hash = ? WHERE id = ?').run(hash, user.id);
+  db.prepare('UPDATE admin_users SET password_hash = ?, password_changed_at = CURRENT_TIMESTAMP WHERE id = ?').run(hash, user.id);
   auditLog('CHANGE_PASSWORD', 'ADMIN_USER', user.id, user.username, null, null, req.session.user.username,
     req.session.user.id === user.id ? 'Own password changed' : `Password changed by ${req.session.user.username}`);
   req.session.flash = { success: `Password updated for "${user.username}".` };

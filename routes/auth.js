@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const rateLimit = require('express-rate-limit');
-const { db } = require('../db');
+const { db, auditLog } = require('../db');
 
 const router = express.Router();
 
@@ -30,6 +30,8 @@ router.post('/login', loginLimiter, (req, res) => {
 
   const user = db.prepare('SELECT * FROM admin_users WHERE username = ?').get(username.trim());
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+    auditLog('FAILED_LOGIN', 'AUTH', null, username.trim(), null, null, username.trim(),
+      'Invalid username or password', req.ip, req.get('user-agent'));
     req.session.flash = { error: 'Invalid username or password.' };
     return res.redirect('/login');
   }
@@ -57,12 +59,23 @@ router.post('/login', loginLimiter, (req, res) => {
   req.session.regenerate((err) => {
     if (err) return res.redirect('/login');
     req.session.user = userData;
+    db.prepare('UPDATE admin_users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
+    auditLog('LOGIN', 'AUTH', user.id, user.username, null, null, user.username,
+      null, req.ip, req.get('user-agent'));
     res.redirect('/');
   });
 });
 
 router.post('/logout', (req, res) => {
-  req.session.destroy(() => res.redirect('/login'));
+  const { id: userId, username } = req.session.user || {};
+  const ip = req.ip;
+  const ua = req.get('user-agent');
+  req.session.destroy(() => {
+    if (username) {
+      auditLog('LOGOUT', 'AUTH', userId || null, username, null, null, username, null, ip, ua);
+    }
+    res.redirect('/login');
+  });
 });
 
 module.exports = router;
