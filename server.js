@@ -14,6 +14,8 @@ if (!process.env.ENCRYPTION_KEY) {
   process.exit(1);
 }
 
+const DEMO_MODE = process.env.DEMO_MODE === 'true';
+
 const { requireLogin, userCan } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 const rolesRoutes = require('./routes/roles');
@@ -116,9 +118,29 @@ app.use((req, res, next) => {
     res.locals.planLimitsLocked = {};
   }
   res.locals.userCan = (permission) => userCan(req.session.user, permission);
+  res.locals.demoMode = DEMO_MODE;
+
+  // In demo mode enable every plan feature regardless of DB values
+  if (DEMO_MODE) {
+    const ps = res.locals.planSettings;
+    const lc = res.locals.planLicensed || {};
+    const features = ['floor_plans','key_agreements','ring_checkout','csv_import_export','email_alerts','priority_support'];
+    for (const f of features) { ps[`feature_${f}`] = '1'; lc[f] = '1'; }
+    res.locals.planLicensed = lc;
+  }
   next();
 });
 
+
+if (DEMO_MODE) {
+  const { router: demoRouter } = require('./routes/demo');
+  // Redirect the normal login page to the demo selector
+  app.get('/login', (req, res) => {
+    if (req.session.user) return res.redirect('/');
+    res.redirect('/demo');
+  });
+  app.use('/', demoRouter);
+}
 
 app.use('/', authRoutes);
 app.use(requireLogin);
@@ -180,6 +202,11 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
+  if (DEMO_MODE) {
+    const { seedDemoData } = require('./db/demo-seed');
+    seedDemoData();
+    console.log('[demo] Demo mode enabled — visit /demo to select a role');
+  }
   console.log(`KeyDog running at http://localhost:${PORT}`);
   setupKeyCron();
   setupAuditRetentionCron();

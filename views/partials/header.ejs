@@ -7,6 +7,15 @@
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
+  <% if (locals.demoMode) { %>
+  <div style="background:#92400e;color:#fef3c7;font-size:0.8rem;font-weight:600;text-align:center;padding:6px 1rem;letter-spacing:0.01em;display:flex;align-items:center;justify-content:center;gap:1rem;flex-shrink:0">
+    <span>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px;margin-right:4px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      DEMO MODE &mdash; exploring as <strong><%= user.role_label || user.role_name %></strong>
+    </span>
+    <a href="/demo" style="color:#fcd34d;text-decoration:underline;font-weight:700">Switch Role</a>
+  </div>
+  <% } %>
   <div class="app-layout">
     <nav class="sidebar">
       <div class="sidebar-brand">
