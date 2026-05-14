@@ -1,162 +1,129 @@
 <%- include('../partials/header') %>
 <div class="page-header">
   <h1>Plan Settings</h1>
+  <p class="text-muted" style="margin-top:0.25rem;font-size:0.875rem">
+    All settings are configured via environment variables on the server.
+  </p>
 </div>
 
-<form action="/admin/plan" method="POST">
-  <div class="card card-form" style="margin-bottom:1.5rem">
-    <div style="padding:1.25rem 1.5rem 0.5rem;border-bottom:1px solid var(--color-border)">
-      <h2 style="font-size:1rem;margin:0">Plan Tier</h2>
-    </div>
-    <div style="padding:1.25rem 1.5rem">
-      <div class="form-group" style="margin-bottom:0">
-        <label for="plan_name">Active Plan</label>
-        <select id="plan_name" name="plan_name" onchange="applyPreset(this.value)">
-          <option value="starter"    <%= settings.plan_name === 'starter'    ? 'selected' : '' %>>Starter — $49/month</option>
-          <option value="campus"     <%= settings.plan_name === 'campus'     ? 'selected' : '' %>>Campus — $149/month</option>
-          <option value="enterprise" <%= settings.plan_name === 'enterprise' ? 'selected' : '' %>>Enterprise — Custom</option>
-          <option value="custom"     <%= !['starter','campus','enterprise'].includes(settings.plan_name) ? 'selected' : '' %>>Custom / Manual</option>
-        </select>
-        <p class="field-hint">Selecting a preset fills in the limits and features below. You can still override individual values after applying a preset.</p>
-      </div>
-    </div>
-  </div>
+<%
+  const featureList = [
+    { key: 'floor_plans',       label: 'Floor Plan Management',   desc: 'Interactive building floor plans with door pin overlays.' },
+    { key: 'key_agreements',    label: 'Key Agreement Workflows',  desc: 'Issue, track, and store signed key custody agreements.' },
+    { key: 'ring_checkout',     label: 'Ring Checkout System',     desc: 'Key-ring check-in / check-out at front desks.' },
+    { key: 'csv_import_export', label: 'CSV Import & Export',      desc: 'Bulk import records and export all data to CSV.' },
+    { key: 'email_alerts',      label: 'Email Overdue Alerts',     desc: 'Automated email notifications for overdue or expiring keys.' },
+    { key: 'priority_support',  label: 'Priority Support',         desc: 'Dedicated support channel with SLA response times.' },
+  ];
 
-  <div class="card card-form" style="margin-bottom:1.5rem">
-    <div style="padding:1.25rem 1.5rem 0.5rem;border-bottom:1px solid var(--color-border)">
-      <h2 style="font-size:1rem;margin:0">Limits</h2>
-    </div>
-    <div style="padding:1.25rem 1.5rem">
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem">
-        <div class="form-group" style="margin-bottom:0">
-          <label for="max_admin_users">Max Admin Users</label>
-          <input type="number" id="max_admin_users" name="max_admin_users" min="1" max="9999"
-                 value="<%= settings.max_admin_users || '' %>">
-          <p class="field-hint">Set to 0 for unlimited.</p>
+  const limitList = [
+    { key: 'max_admin_users',      label: 'Max Admin Users',            env: 'PLAN_MAX_ADMIN_USERS',        hint: '0 = unlimited' },
+    { key: 'max_buildings',         label: 'Max Buildings',              env: 'PLAN_MAX_BUILDINGS',           hint: '0 = unlimited' },
+    { key: 'audit_retention_days',  label: 'Audit Log Retention',        env: 'PLAN_AUDIT_RETENTION_DAYS',    hint: 'days' },
+  ];
+%>
+
+<%# ── Feature Modules ──────────────────────────────────────────────────── %>
+<div class="card" style="margin-bottom:1.5rem">
+  <div style="padding:1.25rem 1.5rem 0.75rem;border-bottom:1px solid var(--color-border)">
+    <h2 style="font-size:1rem;margin:0">Feature Modules</h2>
+    <p class="field-hint" style="margin:0.3rem 0 0">Controlled by <code>PLAN_LICENSED_*</code> environment variables.</p>
+  </div>
+  <div style="padding:1rem 1.5rem">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0.6rem">
+      <% featureList.forEach(f => {
+        const on = planLicensed[f.key] === '1';
+      %>
+      <div class="feature-status-card <%= on ? 'feature-status-card--on' : 'feature-status-card--off' %>">
+        <div class="feature-status-indicator">
+          <% if (on) { %>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <% } else { %>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <% } %>
         </div>
-        <div class="form-group" style="margin-bottom:0">
-          <label for="max_buildings">Max Buildings</label>
-          <input type="number" id="max_buildings" name="max_buildings" min="1" max="9999"
-                 value="<%= settings.max_buildings || '' %>">
-          <p class="field-hint">Limits distinct building values on door records. Set to 0 for unlimited.</p>
-        </div>
-        <div class="form-group" style="margin-bottom:0">
-          <label for="audit_retention_days">Audit Log Retention (days)</label>
-          <input type="number" id="audit_retention_days" name="audit_retention_days" min="1"
-                 value="<%= settings.audit_retention_days || '' %>">
-          <p class="field-hint">Entries older than this are pruned automatically.</p>
+        <div>
+          <div style="font-weight:600;font-size:0.875rem"><%= f.label %></div>
+          <div class="text-muted" style="font-size:0.78rem;margin-top:0.15rem"><%= f.desc %></div>
+          <code class="env-key">PLAN_LICENSED_<%= f.key.toUpperCase() %></code>
         </div>
       </div>
+      <% }); %>
     </div>
   </div>
+</div>
 
-  <div class="card card-form" style="margin-bottom:1.5rem">
-    <div style="padding:1.25rem 1.5rem 0.5rem;border-bottom:1px solid var(--color-border)">
-      <h2 style="font-size:1rem;margin:0">Feature Modules</h2>
-      <p class="field-hint" style="margin:0.25rem 0 0">Disabled modules are hidden from the navigation and access is blocked.</p>
-    </div>
-    <div style="padding:1.25rem 1.5rem">
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0.75rem">
-
-        <% const featureList = [
-          { key: 'feature_floor_plans',       label: 'Floor Plan Management',    desc: 'Upload interactive building floor plans with door overlays.' },
-          { key: 'feature_key_agreements',    label: 'Key Agreement Workflows',  desc: 'Issue, track, and store signed key custody agreements.' },
-          { key: 'feature_ring_checkout',     label: 'Ring Checkout System',     desc: 'Fast key-ring check-in / check-out at front desks.' },
-          { key: 'feature_csv_import_export', label: 'CSV Import & Export',      desc: 'Bulk import records and export data to CSV.' },
-          { key: 'feature_email_alerts',      label: 'Email Overdue Alerts',     desc: 'Automated email notifications for overdue or expiring keys.' },
-          { key: 'feature_priority_support',  label: 'Priority Support',         desc: 'Dedicated support channel with SLA response times.' },
-        ]; %>
-
-        <% featureList.forEach(f => { %>
-        <label class="feature-toggle-card <%= settings[f.key] === '1' ? 'enabled' : '' %>">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem">
-            <div>
-              <div style="font-weight:600;font-size:0.9rem"><%= f.label %></div>
-              <div class="text-muted" style="font-size:0.8rem;margin-top:0.2rem"><%= f.desc %></div>
-            </div>
-            <label class="toggle-switch" style="flex-shrink:0">
-              <input type="hidden" name="<%= f.key %>" value="0">
-              <input type="checkbox" name="<%= f.key %>" value="1"
-                     <%= settings[f.key] === '1' ? 'checked' : '' %>
-                     onchange="this.closest('.feature-toggle-card').classList.toggle('enabled', this.checked)">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </label>
-        <% }) %>
-
+<%# ── Limits ────────────────────────────────────────────────────────────── %>
+<div class="card" style="margin-bottom:1.5rem">
+  <div style="padding:1.25rem 1.5rem 0.75rem;border-bottom:1px solid var(--color-border)">
+    <h2 style="font-size:1rem;margin:0">Limits</h2>
+    <p class="field-hint" style="margin:0.3rem 0 0">Controlled by <code>PLAN_*</code> environment variables. 0 = unlimited.</p>
+  </div>
+  <div style="padding:1.25rem 1.5rem">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem">
+      <% limitList.forEach(lf => {
+        const val = planSettings[lf.key];
+        const display = (val === '0' || val === undefined || val === '') ? 'Unlimited' : val + (lf.hint === 'days' ? ' days' : '');
+      %>
+      <div class="limit-display-card">
+        <div class="limit-display-value"><%= display %></div>
+        <div style="font-weight:500;font-size:0.85rem"><%= lf.label %></div>
+        <code class="env-key"><%= lf.env %></code>
       </div>
+      <% }); %>
     </div>
   </div>
-
-  <div style="display:flex;gap:0.75rem">
-    <button type="submit" class="btn btn-primary">Save Plan Settings</button>
-    <a href="/" class="btn btn-ghost">Cancel</a>
-  </div>
-</form>
+</div>
 
 <style>
-.feature-toggle-card {
+.feature-status-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 0.9rem 1rem;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  padding: 0.8rem 1rem;
 }
-.feature-toggle-card.enabled {
-  border-color: var(--color-primary, #2563eb);
-  background: rgba(37,99,235,0.04);
+.feature-status-card--on {
+  border-color: #16a34a33;
+  background: #f0fdf4;
 }
-.toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; }
-.toggle-switch input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
-.toggle-switch input[type="hidden"] { display: none; }
-.toggle-slider {
-  position: absolute; inset: 0;
-  background: var(--color-border);
-  border-radius: 22px;
-  transition: background 0.2s;
-  cursor: pointer;
+.feature-status-card--off {
+  opacity: 0.55;
+  background: var(--color-bg-muted, #f8f9fa);
 }
-.toggle-slider:before {
-  content: '';
-  position: absolute;
-  height: 16px; width: 16px;
-  left: 3px; bottom: 3px;
-  background: #fff;
+.feature-status-indicator {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  transition: transform 0.2s;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.1rem;
 }
-.toggle-switch input[type="checkbox"]:checked + .toggle-slider { background: var(--color-primary, #2563eb); }
-.toggle-switch input[type="checkbox"]:checked + .toggle-slider:before { transform: translateX(18px); }
+.feature-status-card--on  .feature-status-indicator { background: #16a34a; color: #fff; }
+.feature-status-card--off .feature-status-indicator { background: var(--color-border); color: var(--color-muted); }
+
+.limit-display-card {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+}
+.limit-display-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 0.2rem;
+  color: var(--color-primary, #2563eb);
+}
+.env-key {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  color: var(--color-muted);
+  background: transparent;
+  letter-spacing: 0.01em;
+}
 </style>
-
-<script>
-const PRESETS = {
-  starter:    { max_admin_users:'3',  max_buildings:'1', audit_retention_days:'30',
-                feature_floor_plans:'0', feature_key_agreements:'0', feature_ring_checkout:'0',
-                feature_csv_import_export:'1', feature_email_alerts:'1', feature_priority_support:'0' },
-  campus:     { max_admin_users:'0',  max_buildings:'5', audit_retention_days:'365',
-                feature_floor_plans:'1', feature_key_agreements:'1', feature_ring_checkout:'1',
-                feature_csv_import_export:'1', feature_email_alerts:'1', feature_priority_support:'1' },
-  enterprise: { max_admin_users:'0',  max_buildings:'0', audit_retention_days:'1825',
-                feature_floor_plans:'1', feature_key_agreements:'1', feature_ring_checkout:'1',
-                feature_csv_import_export:'1', feature_email_alerts:'1', feature_priority_support:'1' },
-};
-
-function applyPreset(plan) {
-  const p = PRESETS[plan];
-  if (!p) return;
-  for (const [key, val] of Object.entries(p)) {
-    const el = document.getElementById(key) || document.querySelector(`input[name="${key}"][type="checkbox"]`);
-    if (!el) continue;
-    if (el.type === 'checkbox') {
-      el.checked = val === '1';
-      el.closest('.feature-toggle-card')?.classList.toggle('enabled', val === '1');
-    } else {
-      el.value = val;
-    }
-  }
-}
-</script>
 <%- include('../partials/footer') %>

@@ -3,9 +3,12 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 
-// Issue 6 — fail fast if session secret is not configured
 if (!process.env.SESSION_SECRET) {
-  console.error('FATAL: SESSION_SECRET environment variable is not set. Create a .env file or set it in your environment.');
+  console.error('FATAL: SESSION_SECRET environment variable is not set.');
+  process.exit(1);
+}
+if (!process.env.ENCRYPTION_KEY) {
+  console.error('FATAL: ENCRYPTION_KEY environment variable is not set. Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
   process.exit(1);
 }
 
@@ -58,14 +61,36 @@ app.use((req, res, next) => {
   res.locals.flash = req.session.flash || null;
   if (req.session.flash) delete req.session.flash;
 
-  // Load plan settings and expose helpers to all templates
+  // Load plan settings and compute license + active layers
   try {
     const rows = db.prepare('SELECT key, value FROM plan_settings').all();
     const ps = {};
     for (const r of rows) ps[r.key] = r.value;
+
+    // Feature license: env var overrides DB licensed_xxx value
+    const FEATURE_KEYS = ['floor_plans', 'key_agreements', 'ring_checkout', 'csv_import_export', 'email_alerts', 'priority_support'];
+    const planLicensed = {};
+    for (const f of FEATURE_KEYS) {
+      const envVal = process.env[`PLAN_LICENSED_${f.toUpperCase()}`];
+      planLicensed[f] = (envVal !== undefined && envVal !== '')
+        ? (envVal === '1' ? '1' : '0')
+        : (ps[`licensed_${f}`] ?? '1');
+      // Sync planSettings so nav/middleware checks still work
+      ps[`feature_${f}`] = planLicensed[f];
+    }
+    res.locals.planLicensed = planLicensed;
+
+    // Limits: env vars override DB values
+    const LIMIT_KEYS = ['max_admin_users', 'max_buildings', 'audit_retention_days'];
+    for (const lim of LIMIT_KEYS) {
+      const envVal = process.env[`PLAN_${lim.toUpperCase()}`];
+      if (envVal !== undefined && envVal !== '') ps[lim] = envVal;
+    }
     res.locals.planSettings = ps;
   } catch {
     res.locals.planSettings = {};
+    res.locals.planLicensed = {};
+    res.locals.planLimitsLocked = {};
   }
   res.locals.userCan = (permission) => userCan(req.session.user, permission);
   next();

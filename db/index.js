@@ -321,16 +321,23 @@ function initializeDatabase() {
 
   // ── Seed default plan settings (Starter) ──────────────────────────────────
   const defaultPlanSettings = {
-    plan_name:                'starter',
     max_admin_users:          '3',
     max_buildings:            '1',
     audit_retention_days:     '30',
+    // active flags (what's turned on within the license)
     feature_floor_plans:      '0',
     feature_key_agreements:   '0',
     feature_ring_checkout:    '0',
     feature_csv_import_export:'1',
     feature_email_alerts:     '1',
     feature_priority_support: '0',
+    // license flags (what's been purchased — all on by default for existing installs)
+    licensed_floor_plans:      '1',
+    licensed_key_agreements:   '1',
+    licensed_ring_checkout:    '1',
+    licensed_csv_import_export:'1',
+    licensed_email_alerts:     '1',
+    licensed_priority_support: '1',
   };
 
   const upsertSetting = db.prepare(`
@@ -354,6 +361,23 @@ function initializeDatabase() {
   const superAdminRow = getRoleId.get('super_admin');
   if (superAdminRow) {
     db.prepare('UPDATE admin_users SET role_id = ? WHERE role_id IS NULL').run(superAdminRow.id);
+  }
+
+  // Encrypt any plaintext credentials left over from before encryption was introduced
+  if (process.env.ENCRYPTION_KEY) {
+    const { encrypt, isEncrypted } = require('../lib/encrypt');
+
+    const safeRows = db.prepare('SELECT id, combination FROM safes WHERE combination IS NOT NULL').all();
+    const updateSafe = db.prepare('UPDATE safes SET combination = ? WHERE id = ?');
+    for (const row of safeRows) {
+      if (!isEncrypted(row.combination)) updateSafe.run(encrypt(row.combination), row.id);
+    }
+
+    const acctRows = db.prepare('SELECT id, account_password FROM system_accounts WHERE account_password IS NOT NULL').all();
+    const updateAcct = db.prepare('UPDATE system_accounts SET account_password = ? WHERE id = ?');
+    for (const row of acctRows) {
+      if (!isEncrypted(row.account_password)) updateAcct.run(encrypt(row.account_password), row.id);
+    }
   }
 }
 

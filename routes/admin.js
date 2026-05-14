@@ -144,35 +144,11 @@ router.post('/users/:id/change-password', requirePermission('admin.users'), (req
 // ── Plan Settings ──────────────────────────────────────────────────────────
 
 router.get('/plan', requirePermission('admin.plan'), (req, res) => {
-  const rows = db.prepare('SELECT key, value FROM plan_settings').all();
-  const settings = {};
-  for (const row of rows) settings[row.key] = row.value;
-  res.render('admin/plan-settings', { title: 'Plan Settings', settings });
-});
-
-router.post('/plan', requirePermission('admin.plan'), (req, res) => {
-  const allowed = [
-    'plan_name', 'max_admin_users', 'max_buildings',
-    'audit_retention_days',
-    'feature_floor_plans', 'feature_key_agreements', 'feature_ring_checkout',
-    'feature_csv_import_export', 'feature_email_alerts', 'feature_priority_support',
-  ];
-
-  const upsert = db.prepare('INSERT INTO plan_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value');
-
-  for (const key of allowed) {
-    let value;
-    if (key.startsWith('feature_')) {
-      value = req.body[key] === '1' ? '1' : '0';
-    } else {
-      value = (req.body[key] ?? '').toString().trim();
-    }
-    upsert.run(key, value);
-  }
-
-  auditLog('UPDATE_PLAN_SETTINGS', 'PLAN', null, 'Plan Settings', null, null, req.session.user.username);
-  req.session.flash = { success: 'Plan settings updated.' };
-  res.redirect('/admin/plan');
+  res.render('admin/plan-settings', {
+    title: 'Plan Settings',
+    planLicensed: res.locals.planLicensed || {},
+    planSettings: res.locals.planSettings || {},
+  });
 });
 
 module.exports = router;

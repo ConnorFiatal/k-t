@@ -50,7 +50,7 @@
       <% if (safeAccess.length === 0) { %>
         <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
       <% } %>
-      Safe Combinations <span class="count-badge count-badge-<%= safeAccess.length > 0 ? 'red' : 'green' %>"><%= safeAccess.length %></span>
+      Codes & Combinations <span class="count-badge count-badge-<%= safeAccess.length > 0 ? 'red' : 'green' %>"><%= safeAccess.length %></span>
     </h2>
   </div>
   <% if (safeAccess.length === 0) { %>
@@ -84,7 +84,7 @@
       <% if (keyrings.length === 0) { %>
         <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
       <% } %>
-      KeyTrak Keyrings <span class="count-badge count-badge-<%= keyrings.length > 0 ? 'red' : 'green' %>"><%= keyrings.length %></span>
+      Physical Keyrings <span class="count-badge count-badge-<%= keyrings.length > 0 ? 'red' : 'green' %>"><%= keyrings.length %></span>
     </h2>
   </div>
   <% if (keyrings.length === 0) { %>
@@ -119,7 +119,7 @@
       <% if (systemAccounts.length === 0) { %>
         <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
       <% } %>
-      System Accounts <span class="count-badge count-badge-<%= systemAccounts.length > 0 ? 'red' : 'green' %>"><%= systemAccounts.length %></span>
+      Shared Logins <span class="count-badge count-badge-<%= systemAccounts.length > 0 ? 'red' : 'green' %>"><%= systemAccounts.length %></span>
     </h2>
   </div>
   <% if (systemAccounts.length === 0) { %>

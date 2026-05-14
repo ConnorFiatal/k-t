@@ -25,8 +25,8 @@ function requirePermission(permission) {
 
 function requirePlanFeature(feature) {
   return (req, res, next) => {
-    const settings = res.locals.planSettings || {};
-    if (settings[feature] === '1') return next();
+    const licenseKey = feature.replace(/^feature_/, '');
+    if (res.locals.planLicensed?.[licenseKey] === '1') return next();
     req.session.flash = { error: 'This feature is not available on your current plan.' };
     res.redirect('/');
   };

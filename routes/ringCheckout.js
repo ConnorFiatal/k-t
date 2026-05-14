@@ -29,7 +29,7 @@ router.get('/', requirePermission('ring_checkout.view'), (req, res) => {
     ORDER BY kr.ring_number
   `).all();
 
-  res.render('ring-checkout/index', { title: 'Keytrak Ring Checkout', rings });
+  res.render('ring-checkout/index', { title: 'Ring Checkout', rings });
 });
 
 // ── Detail: ring with physical keys + checkout form ────────────────────────

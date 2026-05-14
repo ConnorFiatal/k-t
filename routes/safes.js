@@ -1,6 +1,7 @@
 const express = require('express');
 const { db, auditLog } = require('../db');
 const { requirePermission } = require('../middleware/auth');
+const { encrypt, decrypt } = require('../lib/encrypt');
 
 const router = express.Router();
 
@@ -10,7 +11,7 @@ router.get('/', requirePermission('safes.view'), (req, res) => {
     FROM safes s LEFT JOIN safe_access sa ON sa.safe_id = s.id
     GROUP BY s.id ORDER BY s.name
   `).all();
-  res.render('safes/index', { title: 'Safe Combinations', safes });
+  res.render('safes/index', { title: 'Codes & Combinations', safes });
 });
 
 router.get('/new', requirePermission('safes.create'), (req, res) => {
@@ -23,7 +24,7 @@ router.post('/', requirePermission('safes.create'), (req, res) => {
     req.session.flash = { error: 'Name and combination are required.' };
     return res.redirect('/safes/new');
   }
-  const result = db.prepare('INSERT INTO safes (name, location, combination, notes) VALUES (?, ?, ?, ?)').run(name.trim(), location || null, combination.trim(), notes || null);
+  const result = db.prepare('INSERT INTO safes (name, location, combination, notes) VALUES (?, ?, ?, ?)').run(name.trim(), location || null, encrypt(combination.trim()), notes || null);
   auditLog('CREATE', 'SAFE', result.lastInsertRowid, name.trim(), null, null, req.session.user.username);
   req.session.flash = { success: `Safe "${name}" created.` };
   res.redirect(`/safes/${result.lastInsertRowid}`);
@@ -32,6 +33,7 @@ router.post('/', requirePermission('safes.create'), (req, res) => {
 router.get('/:id', requirePermission('safes.view'), (req, res) => {
   const safe = db.prepare('SELECT * FROM safes WHERE id = ?').get(req.params.id);
   if (!safe) { req.session.flash = { error: 'Safe not found.' }; return res.redirect('/safes'); }
+  safe.combination = decrypt(safe.combination);
 
   const access = db.prepare(`
     SELECT sa.*, st.first_name, st.last_name, st.department, st.status
@@ -49,6 +51,7 @@ router.get('/:id', requirePermission('safes.view'), (req, res) => {
 router.get('/:id/edit', requirePermission('safes.edit'), (req, res) => {
   const safe = db.prepare('SELECT * FROM safes WHERE id = ?').get(req.params.id);
   if (!safe) { req.session.flash = { error: 'Safe not found.' }; return res.redirect('/safes'); }
+  safe.combination = decrypt(safe.combination);
   res.render('safes/form', { title: `Edit ${safe.name}`, safe, action: `/safes/${safe.id}` });
 });
 
@@ -62,9 +65,9 @@ router.post('/:id', requirePermission('safes.edit'), (req, res) => {
     return res.redirect(`/safes/${safe.id}/edit`);
   }
 
-  const combinationChanged = combination.trim() !== safe.combination;
+  const combinationChanged = combination.trim() !== decrypt(safe.combination);
   db.prepare('UPDATE safes SET name=?, location=?, combination=?, notes=? WHERE id=?')
-    .run(name.trim(), location || null, combination.trim(), notes || null, safe.id);
+    .run(name.trim(), location || null, encrypt(combination.trim()), notes || null, safe.id);
   auditLog('UPDATE', 'SAFE', safe.id, name.trim(), null, null, req.session.user.username, combinationChanged ? 'Combination changed' : null);
   req.session.flash = { success: 'Safe updated.' };
   res.redirect(`/safes/${safe.id}`);

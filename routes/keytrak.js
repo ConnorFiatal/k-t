@@ -16,7 +16,7 @@ router.get('/', requirePermission('keyrings.view'), (req, res) => {
     LEFT JOIN keyring_fob_profiles   kfp ON kfp.keyring_id = k.id
     GROUP BY k.id ORDER BY k.ring_number
   `).all();
-  res.render('keytrak/index', { title: 'KeyTrak Keyrings', keyrings });
+  res.render('keytrak/index', { title: 'Physical Keyrings', keyrings });
 });
 
 router.get('/new', requirePermission('keyrings.create'), (req, res) => {

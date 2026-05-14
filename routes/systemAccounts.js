@@ -1,6 +1,7 @@
 const express = require('express');
 const { db, auditLog } = require('../db');
 const { requirePermission } = require('../middleware/auth');
+const { encrypt, decrypt } = require('../lib/encrypt');
 
 const router = express.Router();
 
@@ -16,11 +17,11 @@ router.get('/', requirePermission('system_accounts.view'), (req, res) => {
 
   const accounts = db.prepare(query).all(...params);
   const categories = db.prepare("SELECT DISTINCT category FROM system_accounts WHERE category IS NOT NULL ORDER BY category").all().map(r => r.category);
-  res.render('system-accounts/index', { title: 'System Accounts', accounts, categories, selectedCategory: category || '' });
+  res.render('system-accounts/index', { title: 'Shared Logins', accounts, categories, selectedCategory: category || '' });
 });
 
 router.get('/new', requirePermission('system_accounts.create'), (req, res) => {
-  res.render('system-accounts/form', { title: 'New System Account', account: null, action: '/system-accounts' });
+  res.render('system-accounts/form', { title: 'New Shared Login', account: null, action: '/system-accounts' });
 });
 
 router.post('/', requirePermission('system_accounts.create'), (req, res) => {
@@ -30,7 +31,7 @@ router.post('/', requirePermission('system_accounts.create'), (req, res) => {
     return res.redirect('/system-accounts/new');
   }
   const result = db.prepare('INSERT INTO system_accounts (system_name, account_username, account_password, url, category, notes) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(system_name.trim(), account_username.trim(), account_password || null, url || null, category || null, notes || null);
+    .run(system_name.trim(), account_username.trim(), account_password ? encrypt(account_password) : null, url || null, category || null, notes || null);
   auditLog('CREATE', 'SYSTEM_ACCOUNT', result.lastInsertRowid, system_name.trim(), null, null, req.session.user.username);
   req.session.flash = { success: `Account "${system_name}" created.` };
   res.redirect(`/system-accounts/${result.lastInsertRowid}`);
@@ -58,7 +59,7 @@ router.get('/:id/secret', requirePermission('system_accounts.view_passwords'), (
   const account = db.prepare('SELECT id, system_name, account_password FROM system_accounts WHERE id = ?').get(req.params.id);
   if (!account) return res.status(404).json({ error: 'Not found' });
   auditLog('VIEW_SECRET', 'SYSTEM_ACCOUNT', account.id, account.system_name, null, null, req.session.user.username);
-  res.json({ password: account.account_password || '' });
+  res.json({ password: decrypt(account.account_password) || '' });
 });
 
 router.get('/:id/edit', requirePermission('system_accounts.edit'), (req, res) => {
@@ -77,9 +78,8 @@ router.post('/:id', requirePermission('system_accounts.edit'), (req, res) => {
     return res.redirect(`/system-accounts/${account.id}/edit`);
   }
 
-  // Issue 2 — only overwrite the stored password if a new one was actually typed
   const passwordChanged = !!(account_password && account_password.trim());
-  const newPassword = passwordChanged ? account_password.trim() : account.account_password;
+  const newPassword = passwordChanged ? encrypt(account_password.trim()) : account.account_password;
 
   db.prepare('UPDATE system_accounts SET system_name=?, account_username=?, account_password=?, url=?, category=?, notes=? WHERE id=?')
     .run(system_name.trim(), account_username.trim(), newPassword || null, url || null, category || null, notes || null, account.id);

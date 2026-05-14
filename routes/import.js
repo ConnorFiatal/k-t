@@ -4,6 +4,7 @@ const multer = require('multer');
 const { parse } = require('csv-parse/sync');
 const { db, auditLog } = require('../db');
 const { requirePermission, requirePlanFeature } = require('../middleware/auth');
+const { encrypt } = require('../lib/encrypt');
 
 router.use(requirePlanFeature('feature_csv_import_export'), requirePermission('data.import'));
 
@@ -396,10 +397,11 @@ router.post('/system-accounts', upload.single('file'), (req, res) => {
         result.skipped++;
         continue;
       }
+      const rawPassword = (r.password || '').trim() || null;
       const info = stmt.run(
         system_name,
         account_username,
-        (r.password      || '').trim() || null,
+        rawPassword ? encrypt(rawPassword) : null,
         (r.url           || '').trim() || null,
         (r.access_level  || '').trim() || null,
         (r.notes         || '').trim() || null
@@ -412,7 +414,7 @@ router.post('/system-accounts', upload.single('file'), (req, res) => {
     }
   }
 
-  res.json({ entity: 'System Accounts', ...result });
+  res.json({ entity: 'Shared Logins', ...result });
 });
 
 module.exports = router;

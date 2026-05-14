@@ -1,6 +1,7 @@
 const express = require('express');
 const { db }  = require('../db');
 const { requirePermission, requirePlanFeature } = require('../middleware/auth');
+const { decrypt } = require('../lib/encrypt');
 
 const router = express.Router();
 
@@ -108,7 +109,7 @@ router.get('/system-accounts', (req, res) => {
            category        AS access_level,
            notes
     FROM system_accounts ORDER BY system_name, account_username
-  `).all();
+  `).all().map(r => ({ ...r, password: decrypt(r.password) }));
   sendCSV(res, 'system-accounts.csv', toCSV(rows, ['account_name','username','password','url','access_level','notes']));
 });
 

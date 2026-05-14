@@ -66,7 +66,7 @@
         <% if (userCan('keyrings.view')) { %>
         <li><a href="/keytrak" class="<%= currentPath.startsWith('/keytrak') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
-          KeyTrak Keyrings
+          Physical Keyrings
         </a></li>
         <% } %>
 
@@ -112,14 +112,14 @@
         <% if (userCan('safes.view')) { %>
         <li><a href="/safes" class="<%= currentPath.startsWith('/safes') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M12 9v-2M12 17v-2M9 12H7M17 12h-2"/></svg>
-          Safe Combinations
+          Codes & Combinations
         </a></li>
         <% } %>
 
         <% if (userCan('system_accounts.view')) { %>
         <li><a href="/system-accounts" class="<%= currentPath.startsWith('/system-accounts') ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-          System Accounts
+          Shared Logins
         </a></li>
         <% } %>
 
