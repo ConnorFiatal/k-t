@@ -55,12 +55,7 @@
         <td><span class="badge badge-level-<%= (k.level||'CHANGE').toLowerCase() %>"><%= k.level %></span></td>
         <td class="text-muted"><%= k.parent_number || '—' %></td>
         <td>
-          <% if (k.bitting) { %>
-            <span class="secret-value" data-secret="<%= k.bitting %>">••••••</span>
-            <button type="button" class="btn btn-sm btn-ghost toggle-secret" onclick="toggleSecret(this)">Show</button>
-          <% } else { %>
-            <span class="text-muted">—</span>
-          <% } %>
+          <%= k.bitting || '—' %>
         </td>
         <td class="text-muted"><%= k.keyway || system.keyway || '—' %></td>
         <td class="text-muted"><%= k.key_blank || '—' %></td>

@@ -100,7 +100,7 @@ router.get('/combinations', (req, res) => {
 });
 
 // ── GET /export/system-accounts ───────────────────────────────────────────
-router.get('/system-accounts', (req, res) => {
+router.get('/system-accounts', requirePermission('system_accounts.view_passwords'), (req, res) => {
   const rows = db.prepare(`
     SELECT system_name    AS account_name,
            account_username AS username,

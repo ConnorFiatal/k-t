@@ -280,6 +280,21 @@ function initializeDatabase() {
     );
   `);
 
+  // ── Audit log integrity: prevent deletion and modification ────────────────
+  db.exec(`
+    CREATE TRIGGER IF NOT EXISTS audit_log_no_delete
+    BEFORE DELETE ON audit_log
+    BEGIN
+      SELECT RAISE(ABORT, 'Audit log entries cannot be deleted');
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS audit_log_no_update
+    BEFORE UPDATE ON audit_log
+    BEGIN
+      SELECT RAISE(ABORT, 'Audit log entries cannot be modified');
+    END;
+  `);
+
   // ── Migrations: keyrings checkout columns ─────────────────────────────────
   try { db.exec('ALTER TABLE keyrings ADD COLUMN current_holder_staff_id INTEGER REFERENCES staff(id)'); } catch (_) {}
   try { db.exec('ALTER TABLE keyrings ADD COLUMN checked_out_date DATETIME'); } catch (_) {}

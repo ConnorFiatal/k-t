@@ -167,6 +167,12 @@ app.use('/reports/keys',     keyReportsRoutes);
 
 app.use((req, res) => res.status(404).render('404', { title: 'Not Found' }));
 
+app.use((err, req, res, next) => {
+  console.error('[error]', err.stack || err.message || err);
+  if (res.headersSent) return next(err);
+  res.status(500).render('500', { title: 'Server Error', user: req.session?.user || null, currentPath: req.path, flash: null, planSettings: {}, planLicensed: {}, userCan: () => false });
+});
+
 app.listen(PORT, () => {
   console.log(`KeyDog running at http://localhost:${PORT}`);
   setupKeyCron();

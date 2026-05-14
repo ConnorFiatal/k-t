@@ -17,9 +17,15 @@ function requirePermission(permission) {
       return next();
     }
     req.session.flash = { error: 'You do not have permission to perform this action.' };
-    // Redirect back or to dashboard
     const ref = req.get('Referer');
-    res.redirect(ref && !ref.includes(req.path) ? ref : '/');
+    let target = '/';
+    if (ref) {
+      try {
+        const u = new URL(ref);
+        if (u.host === req.get('Host') && !ref.includes(req.path)) target = ref;
+      } catch {}
+    }
+    res.redirect(target);
   };
 }
 

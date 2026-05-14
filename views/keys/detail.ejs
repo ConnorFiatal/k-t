@@ -28,12 +28,7 @@
         <tr>
           <th>Bitting</th>
           <td>
-            <% if (key.bitting) { %>
-              <span class="secret-value" data-secret="<%= key.bitting %>">••••••</span>
-              <button type="button" class="btn btn-sm btn-ghost toggle-secret" onclick="toggleSecret(this)">Show</button>
-            <% } else { %>
-              <span class="text-muted">Not recorded</span>
-            <% } %>
+            <%= key.bitting || '' %><% if (!key.bitting) { %><span class="text-muted">Not recorded</span><% } %>
           </td>
         </tr>
         <tr><th>Keyway</th><td><%= key.keyway || key.system_keyway || '—' %><% if (!key.keyway && key.system_keyway) { %> <span class="text-muted text-sm">(from system)</span><% } %></td></tr>

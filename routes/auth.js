@@ -5,10 +5,9 @@ const { db } = require('../db');
 
 const router = express.Router();
 
-// Issue 5 — rate-limit login attempts: max 20 per 15 minutes per IP
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 5,
   skipSuccessfulRequests: true, // only count failed attempts
   handler: (req, res) => {
     req.session.flash = { error: 'Too many login attempts. Please wait 15 minutes and try again.' };
