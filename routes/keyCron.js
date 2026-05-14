@@ -89,4 +89,23 @@ function setupKeyCron() {
   console.log('[keycron] Nightly expiry check scheduled (06:00 daily)');
 }
 
-module.exports = { setupKeyCron };
+function runAuditRetention() {
+  try {
+    const setting = db.prepare("SELECT value FROM plan_settings WHERE key = 'audit_retention_days'").get();
+    const days = parseInt(setting?.value);
+    if (!days || days <= 0) return;
+    const result = db.prepare(
+      "DELETE FROM audit_log WHERE performed_at < datetime('now', '-' || ? || ' days')"
+    ).run(days);
+    if (result.changes > 0) console.log(`[keycron] Pruned ${result.changes} audit log entries older than ${days} days`);
+  } catch (err) {
+    console.error('[keycron] Audit retention error:', err.message);
+  }
+}
+
+function setupAuditRetentionCron() {
+  cron.schedule('30 6 * * *', runAuditRetention);
+  console.log('[keycron] Audit retention scheduled (06:30 daily)');
+}
+
+module.exports = { setupKeyCron, setupAuditRetentionCron };

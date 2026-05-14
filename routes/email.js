@@ -75,9 +75,7 @@ async function sendEmail(to, subject, templateName, variables = {}) {
   const t = getTransporter();
 
   if (!t) {
-    // SMTP not configured — log and skip silently so the app still works
-    console.log(`[email] SMTP not configured. Would have sent "${subject}" to ${to}`);
-    console.log(`[email] Template: ${templateName}`, merged);
+    console.log(`[email] SMTP not configured. Would have sent "${subject}" to ${to} (template: ${templateName})`);
     return { skipped: true };
   }
 

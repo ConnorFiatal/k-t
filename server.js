@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
+const helmet  = require('helmet');
 const path = require('path');
 const fs = require('fs');
 
@@ -36,7 +37,7 @@ const ringCheckoutRoutes    = require('./routes/ringCheckout');
 const keyTransactionsRoutes = require('./routes/keyTransactions');
 const keyAgreementsRoutes   = require('./routes/keyAgreements');
 const keyReportsRoutes      = require('./routes/keyReports');
-const { setupKeyCron }      = require('./routes/keyCron');
+const { setupKeyCron, setupAuditRetentionCron } = require('./routes/keyCron');
 const { db } = require('./db');
 
 const app = express();
@@ -44,6 +45,21 @@ const PORT = process.env.PORT || 3000;
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:  ["'self'"],
+      scriptSrc:   ["'self'", "'unsafe-inline'"],
+      styleSrc:    ["'self'", "'unsafe-inline'"],
+      imgSrc:      ["'self'", "data:"],
+      fontSrc:     ["'self'"],
+      objectSrc:   ["'none'"],
+      frameAncestors: ["'none'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -176,4 +192,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`KeyDog running at http://localhost:${PORT}`);
   setupKeyCron();
+  setupAuditRetentionCron();
 });

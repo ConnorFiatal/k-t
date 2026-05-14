@@ -367,7 +367,7 @@ function initializeDatabase() {
   const count = db.prepare('SELECT COUNT(*) AS c FROM admin_users').get();
   if (count.c === 0) {
     const superAdminRole = getRoleId.get('super_admin');
-    const hash = bcrypt.hashSync('admin123', 10);
+    const hash = bcrypt.hashSync('admin123', 12);
     db.prepare('INSERT INTO admin_users (username, password_hash, role_id) VALUES (?, ?, ?)').run('admin', hash, superAdminRole?.id ?? null);
     console.log('Default admin created: admin / admin123 — CHANGE THIS PASSWORD IMMEDIATELY');
   }

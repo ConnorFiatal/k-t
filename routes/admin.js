@@ -52,7 +52,7 @@ router.post('/users', requirePermission('admin.users'), async (req, res) => {
   const roleRow = role_id ? db.prepare('SELECT id FROM roles WHERE id = ?').get(role_id) : null;
 
   try {
-    const hash = bcrypt.hashSync(password, 10);
+    const hash = bcrypt.hashSync(password, 12);
     const emailVal = email?.trim() || null;
     const result = db.prepare(
       'INSERT INTO admin_users (username, password_hash, email, role_id) VALUES (?, ?, ?, ?)'
@@ -133,7 +133,7 @@ router.post('/users/:id/change-password', requirePermission('admin.users'), (req
     return res.redirect(`/admin/users/${user.id}/change-password`);
   }
 
-  const hash = bcrypt.hashSync(password, 10);
+  const hash = bcrypt.hashSync(password, 12);
   db.prepare('UPDATE admin_users SET password_hash = ? WHERE id = ?').run(hash, user.id);
   auditLog('CHANGE_PASSWORD', 'ADMIN_USER', user.id, user.username, null, null, req.session.user.username,
     req.session.user.id === user.id ? 'Own password changed' : `Password changed by ${req.session.user.username}`);
