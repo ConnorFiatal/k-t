@@ -1,6 +1,7 @@
 # Environment / secrets
 .env
 .env.*
+!.env.example
 
 # SQLite runtime files
 data/*.db-wal

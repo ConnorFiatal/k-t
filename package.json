@@ -8,6 +8,7 @@
     "dev": "node --watch server.js"
   },
   "dependencies": {
+    "@infisical/sdk": "^5.0.2",
     "bcryptjs": "^2.4.3",
     "csv-parse": "^6.2.1",
     "dotenv": "^17.4.2",
