@@ -40,7 +40,7 @@
             <% if (u.id !== user.id) { %>
               <form action="/admin/users/<%= u.id %>/delete" method="POST" style="display:inline">
                 <button type="submit" class="btn btn-sm btn-danger"
-                  onclick="return confirm('Delete admin user &quot;<%= u.username %>&quot;? This cannot be undone.')">Delete</button>
+                  data-confirm="Delete admin user &quot;<%= u.username %>&quot;? This cannot be undone.">Delete</button>
               </form>
             <% } %>
           <% } %>

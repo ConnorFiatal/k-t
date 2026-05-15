@@ -40,7 +40,7 @@
         <td>
           <% if (k.bitting) { %>
             <span class="secret-value" data-secret="<%= k.bitting %>">••••••</span>
-            <button type="button" class="btn btn-sm btn-ghost toggle-secret" onclick="toggleSecret(this)">Show</button>
+            <button type="button" class="btn btn-sm btn-ghost toggle-secret">Show</button>
           <% } else { %>
             <span class="text-muted">—</span>
           <% } %>
@@ -56,11 +56,5 @@
   <% } %>
 </div>
 
-<script>
-function toggleSecret(btn) {
-  const span = btn.previousElementSibling;
-  if (btn.textContent === 'Show') { span.textContent = span.dataset.secret; btn.textContent = 'Hide'; }
-  else { span.textContent = '••••••'; btn.textContent = 'Show'; }
-}
-</script>
+
 <%- include('../partials/footer') %>

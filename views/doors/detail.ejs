@@ -14,7 +14,7 @@
     <a href="/doors/<%= door.id %>/edit" class="btn btn-outline">Edit</a>
     <% if (keys.length === 0 && fobProfiles.length === 0) { %>
       <form action="/doors/<%= door.id %>/delete" method="POST" style="display:inline">
-        <button type="submit" class="btn btn-danger-outline" onclick="return confirm('Delete this door?')">Delete</button>
+        <button type="submit" class="btn btn-danger-outline" data-confirm="Delete this door?">Delete</button>
       </form>
     <% } %>
     <a href="/doors" class="btn btn-ghost">← Back</a>
@@ -56,7 +56,7 @@
             <td>
               <% if (k.bitting) { %>
                 <span class="secret-value" data-secret="<%= k.bitting %>">••••••</span>
-                <button type="button" class="btn btn-sm btn-ghost toggle-secret" onclick="toggleSecret(this)">Show</button>
+                <button type="button" class="btn btn-sm btn-ghost toggle-secret">Show</button>
               <% } else { %>
                 <span class="text-muted">—</span>
               <% } %>
@@ -94,11 +94,5 @@
   </div>
 </div>
 
-<script>
-function toggleSecret(btn) {
-  const span = btn.previousElementSibling;
-  if (btn.textContent === 'Show') { span.textContent = span.dataset.secret; btn.textContent = 'Hide'; }
-  else { span.textContent = '••••••'; btn.textContent = 'Show'; }
-}
-</script>
+
 <%- include('../partials/footer') %>

@@ -2,7 +2,7 @@
 <div class="page-header">
   <h1>Report: Locksmith Transaction History</h1>
   <div class="btn-group">
-    <button onclick="window.print()" class="btn btn-outline no-print">Print</button>
+    <button class="btn btn-outline no-print print-btn">Print</button>
     <a href="/reports/keys/locksmith-history.csv<%= filters.from_date || filters.to_date ? '?from_date='+filters.from_date+'&to_date='+filters.to_date : '' %>" class="btn btn-outline no-print">↓ CSV</a>
     <a href="/reports/keys" class="btn btn-ghost no-print">← Reports</a>
   </div>

@@ -39,7 +39,7 @@
           </div>
           <div class="fp-index-actions">
             <a href="/floor-plans/<%= p.id %>/edit" class="btn btn-sm btn-outline">Edit Pins</a>
-            <form action="/floor-plans/<%= p.id %>/delete" method="POST" style="display:inline" onsubmit="return confirm('Delete this floor plan?')">
+            <form action="/floor-plans/<%= p.id %>/delete" method="POST" style="display:inline" data-confirm="Delete this floor plan?">
               <button type="submit" class="btn btn-sm btn-danger">Delete</button>
             </form>
           </div>

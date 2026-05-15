@@ -12,7 +12,7 @@
       <a href="/staff/<%= staff.id %>/termination" class="btn btn-danger-outline">Termination Checklist</a>
     <% } else { %>
       <form action="/staff/<%= staff.id %>/reactivate" method="POST" style="display:inline">
-        <button type="submit" class="btn btn-outline" onclick="return confirm('Reactivate this staff member?')">Reactivate</button>
+        <button type="submit" class="btn btn-outline" data-confirm="Reactivate this staff member?">Reactivate</button>
       </form>
     <% } %>
     <a href="/staff" class="btn btn-ghost">← Back</a>

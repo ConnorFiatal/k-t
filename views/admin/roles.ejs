@@ -38,7 +38,7 @@
             <a href="/admin/roles/<%= role.id %>/edit" class="btn btn-sm btn-outline">Edit</a>
             <form action="/admin/roles/<%= role.id %>/delete" method="POST" style="display:inline">
               <button type="submit" class="btn btn-sm btn-danger"
-                onclick="return confirm('Delete role &quot;<%= role.label %>&quot;? This cannot be undone.')">Delete</button>
+                data-confirm="Delete role &quot;<%= role.label %>&quot;? This cannot be undone.">Delete</button>
             </form>
           <% } else { %>
             <span class="text-muted" style="font-size:0.8rem">Protected</span>

@@ -55,7 +55,7 @@
             <td class="text-muted"><%= a.granted_by %></td>
             <td class="text-right">
               <form action="/keytrak/<%= keyring.id %>/revoke/<%= a.staff_id %>" method="POST" style="display:inline">
-                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Revoke authorization?')">Revoke</button>
+                <button type="submit" class="btn btn-sm btn-danger" data-confirm="Revoke authorization?">Revoke</button>
               </form>
             </td>
           </tr>
@@ -95,7 +95,7 @@
             <td>
               <% if (k.bitting) { %>
                 <span class="secret-value" data-secret="<%= k.bitting %>">••••••</span>
-                <button type="button" class="btn btn-sm btn-ghost toggle-secret" onclick="toggleSecret(this)">Show</button>
+                <button type="button" class="btn btn-sm btn-ghost toggle-secret">Show</button>
               <% } else { %>
                 <span class="text-muted">—</span>
               <% } %>
@@ -104,7 +104,7 @@
             <td class="text-muted text-sm"><%= k.assigned_at %></td>
             <td class="text-right">
               <form action="/keytrak/<%= keyring.id %>/keys/<%= k.key_id %>/remove" method="POST" style="display:inline">
-                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Remove key from ring?')">Remove</button>
+                <button type="submit" class="btn btn-sm btn-danger" data-confirm="Remove key from ring?">Remove</button>
               </form>
             </td>
           </tr>
@@ -145,7 +145,7 @@
             <td class="text-muted text-sm"><%= f.assigned_at %></td>
             <td class="text-right">
               <form action="/keytrak/<%= keyring.id %>/fobs/<%= f.fob_profile_id %>/remove" method="POST" style="display:inline">
-                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Remove FOB profile from ring?')">Remove</button>
+                <button type="submit" class="btn btn-sm btn-danger" data-confirm="Remove FOB profile from ring?">Remove</button>
               </form>
             </td>
           </tr>
@@ -157,11 +157,5 @@
   </div>
 </div>
 
-<script>
-function toggleSecret(btn) {
-  const span = btn.previousElementSibling;
-  if (btn.textContent === 'Show') { span.textContent = span.dataset.secret; btn.textContent = 'Hide'; }
-  else { span.textContent = '••••••'; btn.textContent = 'Show'; }
-}
-</script>
+
 <%- include('../partials/footer') %>

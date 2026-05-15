@@ -23,7 +23,7 @@
           <% if (account.account_password) { %>
             <%# Issue 1 — password is NOT in the HTML; fetched on demand via authenticated endpoint %>
             <span class="secret-value" data-id="<%= account.id %>">••••••••</span>
-            <button type="button" class="btn btn-sm btn-ghost toggle-secret" onclick="toggleSecret(this)">Show</button>
+            <button type="button" class="btn btn-sm btn-ghost toggle-secret">Show</button>
           <% } else { %>
             <span class="text-muted">Not stored</span>
           <% } %>
@@ -72,7 +72,7 @@
           <td class="text-muted"><%= a.granted_by %></td>
           <td class="text-right">
             <form action="/system-accounts/<%= account.id %>/revoke/<%= a.staff_id %>" method="POST" style="display:inline">
-              <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Revoke access for <%= a.first_name %> <%= a.last_name %>?')">Revoke</button>
+              <button type="submit" class="btn btn-sm btn-danger" data-confirm="Revoke access for <%= a.first_name %> <%= a.last_name %>?">Revoke</button>
             </form>
           </td>
         </tr>
@@ -84,28 +84,30 @@
 </div>
 
 <script>
-async function toggleSecret(btn) {
-  const span = btn.previousElementSibling;
-  if (btn.textContent === 'Show') {
-    btn.disabled = true;
-    btn.textContent = '…';
-    try {
-      const resp = await fetch(`/system-accounts/${span.dataset.id}/secret`);
-      if (!resp.ok) throw new Error('Failed to load');
-      const { password } = await resp.json();
-      span.textContent = password || '(empty)';
-      btn.textContent = 'Hide';
-    } catch (e) {
+document.querySelectorAll('.toggle-secret').forEach(btn => {
+  btn.addEventListener('click', async function () {
+    const span = this.previousElementSibling;
+    if (this.textContent === 'Show') {
+      this.disabled = true;
+      this.textContent = '…';
+      try {
+        const resp = await fetch(`/system-accounts/${span.dataset.id}/secret`);
+        if (!resp.ok) throw new Error('Failed to load');
+        const { password } = await resp.json();
+        span.textContent = password || '(empty)';
+        this.textContent = 'Hide';
+      } catch (e) {
+        span.textContent = '••••••••';
+        this.textContent = 'Show';
+        alert('Could not load password: ' + e.message);
+      } finally {
+        this.disabled = false;
+      }
+    } else {
       span.textContent = '••••••••';
-      btn.textContent = 'Show';
-      alert('Could not load password: ' + e.message);
-    } finally {
-      btn.disabled = false;
+      this.textContent = 'Show';
     }
-  } else {
-    span.textContent = '••••••••';
-    btn.textContent = 'Show';
-  }
-}
+  });
+});
 </script>
 <%- include('../partials/footer') %>
