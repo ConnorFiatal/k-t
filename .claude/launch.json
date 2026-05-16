@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "credential-manager",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server.js"],
+      "port": 3000,
+      "env": {
+        "SESSION_SECRET": "fb0f9e044a736f19cd85860c8c3d4e2f2655dacf68e11a199f5ca06e12cd92ea",
+        "ENCRYPTION_KEY": "2ef55870c3478ce20d2c720076789762aa269f9bd44dc02d5a4d6533cd0221f5"
+      }
+    }
+  ]
+}

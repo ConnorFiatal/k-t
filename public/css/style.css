@@ -1616,3 +1616,143 @@ textarea { resize: vertical; }
   color: #b91c1c;
   font-weight: 600;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   DARK MODE
+   ══════════════════════════════════════════════════════════════ */
+
+html.dark {
+  color-scheme: dark;
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --border: #334155;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --gray-light: #1e293b;
+  --gray-text: #94a3b8;
+  --green-light: #052e16;
+  --green-text: #4ade80;
+  --red-light: #450a0a;
+  --red-text: #f87171;
+  --orange-light: #431407;
+  --orange-text: #fb923c;
+  --purple-light: #2e1065;
+  --purple-text: #c4b5fd;
+  --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Hardcoded surface backgrounds */
+html.dark .card-header                  { background: #162032; }
+html.dark .table th                     { background: #162032; }
+html.dark .table td                     { border-bottom-color: #334155; }
+html.dark .table tbody tr:hover td      { background: #162032; }
+html.dark .info-table th,
+html.dark .info-table td               { border-bottom-color: #334155; }
+html.dark .grant-form                   { background: #162032; }
+html.dark .fp-thumb-link               { background: #162032; }
+html.dark .fp-canvas                   { background: #162032; }
+
+/* Form controls */
+html.dark input[type="text"],
+html.dark input[type="email"],
+html.dark input[type="password"],
+html.dark input[type="tel"],
+html.dark input[type="url"],
+html.dark input[type="date"],
+html.dark input[type="number"],
+html.dark input[type="search"],
+html.dark textarea,
+html.dark select                        { background: var(--surface); color: var(--text); }
+html.dark input[type="file"]           { color: var(--text); }
+
+/* Buttons */
+html.dark .btn-outline                  { background: var(--surface); color: var(--text); }
+html.dark .btn-outline:hover            { background: #162032; border-color: #475569; }
+html.dark .btn-danger-outline           { background: var(--surface); }
+html.dark .btn-ghost:hover              { background: #162032; }
+
+/* Badges — colored variants with hardcoded hex */
+html.dark .badge-blue                   { background: #1e3a5f; color: #93c5fd; }
+html.dark .badge-gray                   { background: #334155; color: #cbd5e1; }
+html.dark .badge-access-keyed          { background: #1e3a5f; color: #93c5fd; }
+html.dark .badge-access-fob            { background: #451a03; color: #fbbf24; }
+html.dark .badge-access-both           { background: #052e16; color: #34d399; }
+html.dark .badge-pk-active             { background: #052e16; color: #4ade80; }
+html.dark .badge-pk-lost               { background: #450a0a; color: #f87171; }
+html.dark .badge-pk-damaged            { background: #431407; color: #fb923c; }
+html.dark .badge-pk-destroyed          { background: #334155; color: #94a3b8; }
+html.dark .badge-tx-issued-from-locksmith { background: #1e3a5f; color: #93c5fd; }
+html.dark .badge-tx-issued-to-person   { background: #052e16; color: #34d399; }
+html.dark .badge-tx-returned           { background: #312e81; color: #a5b4fc; }
+html.dark .badge-tx-lost               { background: #450a0a; color: #f87171; }
+html.dark .badge-tx-damaged            { background: #431407; color: #fb923c; }
+html.dark .badge-tx-destroyed          { background: #334155; color: #94a3b8; }
+html.dark .badge-tx-replaced           { background: #713f12; color: #fde68a; }
+
+/* Stat icon colors */
+html.dark .stat-blue                   { background: #1e3a5f; color: #93c5fd; }
+html.dark .stat-teal                   { background: #064e3b; color: #34d399; }
+html.dark .stat-indigo                 { background: #312e81; color: #a5b4fc; }
+html.dark .stat-slate                  { background: #334155; color: #cbd5e1; }
+html.dark .stat-cyan                   { background: #164e63; color: #67e8f9; }
+html.dark .stat-rose                   { background: #4c0519; color: #fb7185; }
+
+/* Stat pills */
+html.dark .stat-pill-orange            { background: #431407; border-color: #9a3412; }
+html.dark .stat-pill-red               { background: #450a0a; border-color: #991b1b; }
+
+/* Row state highlights */
+html.dark .row-overdue                 { background: #2a0f0f; }
+html.dark .row-expiring                { background: #27200a; }
+html.dark .row-checked-out             { background: #27200a; }
+
+/* Custody timeline dots */
+html.dark .custody-dot-issued_from_locksmith { background: #1e3a5f; border-color: #3b82f6; }
+html.dark .custody-dot-issued_to_person      { background: #052e16; border-color: #16a34a; }
+html.dark .custody-dot-returned              { background: #312e81; border-color: #6366f1; }
+html.dark .custody-dot-lost                  { background: #450a0a; border-color: #dc2626; }
+html.dark .custody-dot-damaged               { background: #431407; border-color: #ea580c; }
+html.dark .custody-dot-destroyed             { background: #334155; border-color: #475569; }
+html.dark .custody-dot-replaced              { background: #713f12; border-color: #ca8a04; }
+
+/* Misc component hardcodes */
+html.dark .fp-panel-door-selected      { background: #1e3a5f; }
+html.dark .pk-stat-active              { background: #1e3a5f; }
+html.dark .report-icon                 { background: #1e3a5f; }
+html.dark .tree-door-count             { background: #1e3a5f; color: #93c5fd; }
+html.dark .login-card                  { background: var(--surface); }
+html.dark .login-brand                 { color: var(--sidebar-text-bright); }
+
+/* Alert / status borders */
+html.dark .checklist-complete          { border-color: #166534; }
+html.dark .checklist-warning           { border-color: #9a3412; }
+html.dark .flash-success               { border-color: #166534; }
+html.dark .flash-error                 { border-color: #991b1b; }
+html.dark .result-box.ok               { border-color: #166534; }
+html.dark .result-box.err              { border-color: #991b1b; }
+
+/* ── Dark-mode toggle button (lives inside .sidebar-user) ───── */
+.sidebar-user-actions { display: flex; gap: 6px; align-items: center; }
+.sidebar-user-actions form { flex: 1; }
+.sidebar-user-actions .btn-logout { width: 100%; }
+
+.btn-dark-toggle {
+  background: rgba(255,255,255,0.07);
+  border: none;
+  color: var(--sidebar-text);
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+  line-height: 0;
+}
+.btn-dark-toggle:hover { background: rgba(255,255,255,0.14); color: var(--sidebar-text-bright); }
+.btn-dark-toggle .icon-sun  { display: none; }
+.btn-dark-toggle .icon-moon { display: block; }
+html.dark .btn-dark-toggle .icon-sun  { display: block; }
+html.dark .btn-dark-toggle .icon-moon { display: none; }

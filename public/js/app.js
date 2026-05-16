@@ -1,3 +1,10 @@
+// Dark mode toggle
+document.addEventListener('click', function (e) {
+  if (!e.target.closest('#darkToggle')) return;
+  var isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+});
+
 // Confirm dialogs on buttons: <button data-confirm="Are you sure?">
 document.addEventListener('click', function (e) {
   const btn = e.target.closest('[data-confirm]');
