@@ -110,6 +110,8 @@ app.use((req, res, next) => {
   res.locals.currentPath = req.path;
   res.locals.flash = req.session.flash || null;
   if (req.session.flash) delete req.session.flash;
+  const ua = req.headers['user-agent'] || '';
+  res.locals.isMobile = /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
 
   // Load plan settings and compute license + active layers
   try {
