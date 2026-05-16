@@ -30,7 +30,7 @@
         <tr><th>Key Type</th><td><a href="/keys/<%= pk.key_type_id %>"><%= pk.key_number %></a> — <%= pk.system_name %></td></tr>
         <tr><th>Level</th><td><span class="badge badge-level-<%= (pk.level||'change').toLowerCase() %>"><%= pk.level %></span></td></tr>
         <tr><th>Status</th><td><span class="badge badge-pk-<%= pk.status %>"><%= STATUS_LABELS[pk.status] %></span></td></tr>
-        <tr><th>Physical Ring</th><td><%= pk.ring_number ? `<a href="/ring-checkout/${pk.keytrak_ring_id}">Ring ${pk.ring_number}</a>` : '—' %></td></tr>
+        <tr><th>Physical Ring</th><td><% if (pk.ring_number) { %><a href="/ring-checkout/<%= pk.keytrak_ring_id %>">Ring <%= pk.ring_number %></a><% } else { %>—<% } %></td></tr>
         <tr><th>Expiry Date</th>
           <td>
             <% if (pk.expiry_date) { %>

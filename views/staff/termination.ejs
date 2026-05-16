@@ -176,7 +176,7 @@
       <tr>
         <td><a href="/system-accounts/<%= a.account_id %>"><%= a.system_name %></a></td>
         <td class="text-muted"><%= a.account_username %></td>
-        <td><%= a.category ? `<span class="badge badge-outline">${a.category}</span>` : '—' %></td>
+        <td><% if (a.category) { %><span class="badge badge-outline"><%= a.category %></span><% } else { %>—<% } %></td>
         <td class="text-muted text-sm"><%= a.granted_at %></td>
         <td class="text-muted"><%= a.granted_by %></td>
         <td class="text-right">

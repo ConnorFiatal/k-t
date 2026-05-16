@@ -26,7 +26,7 @@
       <tr><th>Employee ID</th><td><%= staff.employee_id || '—' %></td></tr>
       <tr><th>Department</th><td><%= staff.department || '—' %></td></tr>
       <tr><th>Title</th><td><%= staff.title || '—' %></td></tr>
-      <tr><th>Email</th><td><%= staff.email ? `<a href="mailto:${staff.email}">${staff.email}</a>` : '—' %></td></tr>
+      <tr><th>Email</th><td><% if (staff.email) { %><a href="mailto:<%= staff.email %>"><%= staff.email %></a><% } else { %>—<% } %></td></tr>
       <tr><th>Phone</th><td><%= staff.phone || '—' %></td></tr>
       <tr><th>Start Date</th><td><%= staff.start_date || '—' %></td></tr>
       <tr><th>Added</th><td><%= staff.created_at %></td></tr>

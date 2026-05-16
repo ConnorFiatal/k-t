@@ -28,8 +28,8 @@
       <tr>
         <td><a href="/system-accounts/<%= a.id %>"><strong><%= a.system_name %></strong></a></td>
         <td class="text-muted"><%= a.account_username %></td>
-        <td><%= a.category ? `<span class="badge badge-outline">${a.category}</span>` : '—' %></td>
-        <td class="text-muted text-sm"><%= a.url ? `<a href="${a.url}" target="_blank" rel="noopener">${a.url.length > 40 ? a.url.substring(0,40)+'…' : a.url}</a>` : '—' %></td>
+        <td><% if (a.category) { %><span class="badge badge-outline"><%= a.category %></span><% } else { %>—<% } %></td>
+        <td class="text-muted text-sm"><% if (a.url) { %><a href="<%= a.url %>" target="_blank" rel="noopener"><%= a.url.length > 40 ? a.url.substring(0,40)+'…' : a.url %></a><% } else { %>—<% } %></td>
         <td><span class="count-badge"><%= a.access_count %></span></td>
         <td class="text-right">
           <a href="/system-accounts/<%= a.id %>" class="btn btn-sm btn-outline">Manage Access</a>
