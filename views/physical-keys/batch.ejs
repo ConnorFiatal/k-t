@@ -28,17 +28,17 @@
       <div class="form-row" style="align-items:flex-end;">
         <div class="form-group" style="flex:1 1 200px;">
           <label for="prefix">Stamp Prefix <span class="text-muted" style="font-weight:400;">(optional)</span></label>
-          <input type="text" id="prefix" name="prefix" placeholder="e.g. K" oninput="updatePreview()">
+          <input type="text" id="prefix" name="prefix" placeholder="e.g. K">
           <div class="form-hint">Text prepended before the number (leave blank for numbers only)</div>
         </div>
         <div class="form-group" style="flex:0 1 140px;">
           <label for="start_num">From # <span class="required">*</span></label>
-          <input type="text" id="start_num" name="start_num" placeholder="007" oninput="updatePreview()" autocomplete="off">
+          <input type="text" id="start_num" name="start_num" placeholder="007" autocomplete="off">
           <div class="form-hint">Leading zeros set padding</div>
         </div>
         <div class="form-group" style="flex:0 1 140px;">
           <label for="end_num">To # <span class="required">*</span></label>
-          <input type="text" id="end_num" name="end_num" placeholder="013" oninput="updatePreview()" autocomplete="off">
+          <input type="text" id="end_num" name="end_num" placeholder="013" autocomplete="off">
         </div>
       </div>
 
@@ -55,7 +55,7 @@
       <div class="form-group">
         <label for="stamp_list">Stamp Numbers <span class="required">*</span></label>
         <textarea id="stamp_list" name="stamp_list" rows="8"
-                  placeholder="Enter one stamp number per line, e.g.:&#10;K-007&#10;K-008&#10;K-009" oninput="updateListPreview()"></textarea>
+                  placeholder="Enter one stamp number per line, e.g.:&#10;K-007&#10;K-008&#10;K-009"></textarea>
         <div class="form-hint">One stamp number per line. Blank lines and leading/trailing spaces are ignored.</div>
       </div>
       <div class="batch-preview" id="listPreview">
@@ -216,5 +216,10 @@ function updateSubmitLabel(n) {
   if (n === undefined) { btn.textContent = 'Add Keys'; return; }
   btn.textContent = n > 0 ? `Add ${n} Key${n === 1 ? '' : 's'}` : 'Add Keys';
 }
+
+document.getElementById('prefix').addEventListener('input', updatePreview);
+document.getElementById('start_num').addEventListener('input', updatePreview);
+document.getElementById('end_num').addEventListener('input', updatePreview);
+document.getElementById('stamp_list').addEventListener('input', updateListPreview);
 </script>
 <%- include('../partials/footer') %>

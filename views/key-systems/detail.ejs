@@ -9,7 +9,7 @@
     <a href="/key-systems/<%= system.id %>/edit" class="btn btn-outline">Edit System</a>
     <% if (allKeys.length === 0) { %>
       <form action="/key-systems/<%= system.id %>/delete" method="POST" style="display:inline">
-        <button type="submit" class="btn btn-danger-outline" onclick="return confirm('Delete this key system?')">Delete</button>
+        <button type="submit" class="btn btn-danger-outline" data-confirm="Delete this key system?">Delete</button>
       </form>
     <% } %>
     <a href="/reports/master-system-map?system_id=<%= system.id %>" class="btn btn-outline">Full Map Report</a>

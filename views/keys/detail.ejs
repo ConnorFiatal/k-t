@@ -10,7 +10,7 @@
     <a href="/keys/<%= key.id %>/edit" class="btn btn-outline">Edit</a>
     <% if (onRings.length === 0 && childKeys.length === 0) { %>
       <form action="/keys/<%= key.id %>/delete" method="POST" style="display:inline">
-        <button type="submit" class="btn btn-danger-outline" onclick="return confirm('Delete key <%= key.key_number %>?')">Delete</button>
+        <button type="submit" class="btn btn-danger-outline" data-confirm="Delete key <%= key.key_number %>?">Delete</button>
       </form>
     <% } %>
     <a href="/key-systems/<%= key.key_system_id %>" class="btn btn-ghost">← System</a>
@@ -109,7 +109,7 @@
           <td><span class="badge badge-access-<%= d.access_type.toLowerCase() %>"><%= d.access_type %></span></td>
           <td class="text-right">
             <form action="/keys/<%= key.id %>/doors/<%= d.id %>/remove" method="POST" style="display:inline">
-              <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Remove this door?')">Remove</button>
+              <button type="submit" class="btn btn-sm btn-danger" data-confirm="Remove this door?">Remove</button>
             </form>
           </td>
         </tr>
@@ -120,11 +120,5 @@
   </div>
 </div>
 
-<script>
-function toggleSecret(btn) {
-  const span = btn.previousElementSibling;
-  if (btn.textContent === 'Show') { span.textContent = span.dataset.secret; btn.textContent = 'Hide'; }
-  else { span.textContent = '••••••'; btn.textContent = 'Show'; }
-}
-</script>
+
 <%- include('../partials/footer') %>

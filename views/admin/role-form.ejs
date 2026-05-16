@@ -29,8 +29,8 @@
 
     <div style="padding:1.25rem 1.5rem">
       <div style="display:flex;gap:0.75rem;margin-bottom:1.25rem">
-        <button type="button" class="btn btn-sm btn-outline" onclick="setAll(true)">Select All</button>
-        <button type="button" class="btn btn-sm btn-outline" onclick="setAll(false)">Clear All</button>
+        <button type="button" class="btn btn-sm btn-outline" id="selectAll">Select All</button>
+        <button type="button" class="btn btn-sm btn-outline" id="clearAll">Clear All</button>
       </div>
 
       <div class="permission-grid">
@@ -40,7 +40,6 @@
             <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-weight:600;font-size:0.85rem">
               <input type="checkbox" class="group-toggle"
                      data-group="<%= group.label.toLowerCase().replace(/[^a-z0-9]/g,'_') %>"
-                     onchange="toggleGroup(this)"
                      <%= group.permissions.every(p => rolePerms.includes(p.key)) ? 'checked' : '' %>>
               <%= group.label %>
             </label>
@@ -50,8 +49,7 @@
             <label class="permission-item">
               <input type="checkbox" name="permissions" value="<%= perm.key %>"
                      class="perm-check group-<%= group.label.toLowerCase().replace(/[^a-z0-9]/g,'_') %>"
-                     <%= rolePerms.includes(perm.key) ? 'checked' : '' %>
-                     onchange="updateGroupToggle(this)">
+                     <%= rolePerms.includes(perm.key) ? 'checked' : '' %>>
               <span class="perm-label"><%= perm.label %></span>
               <span class="perm-key"><%= perm.key %></span>
             </label>
@@ -121,5 +119,9 @@ function updateGroupToggle(perm) {
   const toggle = document.querySelector('[data-group="' + group + '"]');
   if (toggle) toggle.checked = [...boxes].every(b => b.checked);
 }
+document.getElementById('selectAll').addEventListener('click', () => setAll(true));
+document.getElementById('clearAll').addEventListener('click', () => setAll(false));
+document.querySelectorAll('.group-toggle').forEach(t => t.addEventListener('change', () => toggleGroup(t)));
+document.querySelectorAll('.perm-check').forEach(p => p.addEventListener('change', () => updateGroupToggle(p)));
 </script>
 <%- include('../partials/footer') %>

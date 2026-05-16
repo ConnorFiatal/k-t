@@ -104,7 +104,9 @@ function initializeDatabase() {
       staff_name TEXT,
       performed_by TEXT NOT NULL,
       performed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      notes TEXT
+      notes TEXT,
+      ip_address TEXT,
+      user_agent TEXT
     );
 
     CREATE TABLE IF NOT EXISTS key_systems (
@@ -306,6 +308,14 @@ function initializeDatabase() {
   // Migration: add role_id to admin_users
   try { db.exec('ALTER TABLE admin_users ADD COLUMN role_id INTEGER REFERENCES roles(id)'); } catch (_) {}
 
+  // SOC2: track authentication timestamps on admin_users
+  try { db.exec('ALTER TABLE admin_users ADD COLUMN last_login_at DATETIME'); } catch (_) {}
+  try { db.exec('ALTER TABLE admin_users ADD COLUMN password_changed_at DATETIME'); } catch (_) {}
+
+  // SOC2: capture origin context on audit events
+  try { db.exec('ALTER TABLE audit_log ADD COLUMN ip_address TEXT'); } catch (_) {}
+  try { db.exec('ALTER TABLE audit_log ADD COLUMN user_agent TEXT'); } catch (_) {}
+
   // ── Seed default roles ─────────────────────────────────────────────────────
   const systemRoles = [
     { name: 'super_admin', label: 'Super Admin', description: 'Full access to everything. Cannot be modified.', is_system: 1 },
@@ -396,11 +406,11 @@ function initializeDatabase() {
   }
 }
 
-function auditLog(action, resourceType, resourceId, resourceName, staffId, staffName, performedBy, notes = null) {
+function auditLog(action, resourceType, resourceId, resourceName, staffId, staffName, performedBy, notes = null, ip = null, ua = null) {
   db.prepare(`
-    INSERT INTO audit_log (action, resource_type, resource_id, resource_name, staff_id, staff_name, performed_by, notes)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(action, resourceType, resourceId, resourceName, staffId, staffName, performedBy, notes);
+    INSERT INTO audit_log (action, resource_type, resource_id, resource_name, staff_id, staff_name, performed_by, notes, ip_address, user_agent)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(action, resourceType, resourceId, resourceName, staffId, staffName, performedBy, notes, ip, ua);
 }
 
 initializeDatabase();

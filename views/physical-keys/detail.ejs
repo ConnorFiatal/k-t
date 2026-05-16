@@ -76,7 +76,7 @@
         <form action="/physical-keys/<%= pk.id %>/return" method="POST" class="inline-action-form">
           <input type="date" name="returned_date" required value="<%= new Date().toISOString().split('T')[0] %>">
           <input type="text" name="notes" placeholder="Condition notes (optional)" style="flex:1">
-          <button type="submit" class="btn btn-outline" onclick="return confirm('Record return of key <%= pk.stamp_number %>?')">Record Return</button>
+          <button type="submit" class="btn btn-outline" data-confirm="Record return of key <%= pk.stamp_number %>?">Record Return</button>
         </form>
       </div>
       <% } %>
@@ -144,7 +144,7 @@
                 <label>Notes</label>
                 <textarea name="notes" rows="2" placeholder="Circumstances of loss…"></textarea>
               </div>
-              <button type="submit" class="btn btn-danger" onclick="return confirm('Mark key <%= pk.stamp_number %> as LOST? This cannot be undone without editing.')">Confirm Lost</button>
+              <button type="submit" class="btn btn-danger" data-confirm="Mark key <%= pk.stamp_number %> as LOST? This cannot be undone without editing.">Confirm Lost</button>
             </form>
           </details>
 
@@ -154,7 +154,7 @@
               <div class="form-row">
                 <div class="form-group">
                   <label>Type</label>
-                  <select name="_type" onchange="this.closest('form').action='/physical-keys/<%= pk.id %>/' + this.value">
+                  <select name="_type" id="damageType">
                     <option value="damaged">Damaged</option>
                     <option value="destroyed">Destroyed</option>
                   </select>
@@ -174,7 +174,7 @@
                   <input type="text" name="notes" placeholder="Description of damage…">
                 </div>
               </div>
-              <button type="submit" class="btn btn-danger" onclick="return confirm('Record damage/destruction for key <%= pk.stamp_number %>?')">Confirm</button>
+              <button type="submit" class="btn btn-danger" data-confirm="Record damage/destruction for key <%= pk.stamp_number %>?">Confirm</button>
             </form>
           </details>
 
@@ -244,4 +244,12 @@
     </div>
   </div>
 </div>
+<script>
+const damageTypeSelect = document.getElementById('damageType');
+if (damageTypeSelect) {
+  damageTypeSelect.addEventListener('change', function () {
+    this.closest('form').action = '/physical-keys/<%= pk.id %>/' + this.value;
+  });
+}
+</script>
 <%- include('../partials/footer') %>

@@ -1,3 +1,5 @@
+const { auditLog } = require('../db');
+
 function requireLogin(req, res, next) {
   if (!req.session || !req.session.user) {
     req.session.flash = { error: 'Please log in to continue.' };
@@ -16,6 +18,8 @@ function requirePermission(permission) {
     if (u.is_super_admin || (Array.isArray(u.permissions) && u.permissions.includes(permission))) {
       return next();
     }
+    auditLog('PERMISSION_DENIED', 'ACCESS', null, permission, null, null, u.username,
+      `${req.method} ${req.path}`, req.ip, req.get('user-agent'));
     req.session.flash = { error: 'You do not have permission to perform this action.' };
     const ref = req.get('Referer');
     let target = '/';

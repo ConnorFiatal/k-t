@@ -15,7 +15,7 @@
     <a href="/staff/<%= staff.id %>" class="btn btn-ghost">← Staff Profile</a>
     <% if (staff.status === 'active') { %>
       <form action="/staff/<%= staff.id %>/terminate" method="POST" style="display:inline">
-        <button type="submit" class="btn btn-danger" onclick="return confirm('Mark <%= staff.first_name %> <%= staff.last_name %> as terminated?')">
+        <button type="submit" class="btn btn-danger" data-confirm="Mark <%= staff.first_name %> <%= staff.last_name %> as terminated?">
           Mark Terminated
         </button>
       </form>
@@ -45,7 +45,7 @@
   </div>
 
   <form action="/staff/<%= staff.id %>/revoke-all" method="POST" style="margin-bottom: 1.5rem;">
-    <button type="submit" class="btn btn-danger" onclick="return confirm('Revoke ALL access for <%= staff.first_name %> <%= staff.last_name %>? This will be logged.')">
+    <button type="submit" class="btn btn-danger" data-confirm="Revoke ALL access for <%= staff.first_name %> <%= staff.last_name %>? This will be logged.">
       Revoke All Access (<%= totalAccess %> item<%= totalAccess !== 1 ? 's' : '' %>)
     </button>
   </form>
@@ -75,7 +75,7 @@
         <td class="text-muted"><%= a.granted_by %></td>
         <td class="text-right">
           <form action="/safes/<%= a.safe_id %>/revoke/<%= staff.id %>" method="POST" style="display:inline">
-            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Revoke safe access?')">Revoke</button>
+            <button type="submit" class="btn btn-sm btn-danger" data-confirm="Revoke safe access?">Revoke</button>
           </form>
         </td>
       </tr>
@@ -110,7 +110,7 @@
         <td class="text-muted"><%= k.granted_by %></td>
         <td class="text-right">
           <form action="/keytrak/<%= k.keyring_id %>/revoke/<%= staff.id %>" method="POST" style="display:inline">
-            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Revoke keyring authorization?')">Revoke</button>
+            <button type="submit" class="btn btn-sm btn-danger" data-confirm="Revoke keyring authorization?">Revoke</button>
           </form>
         </td>
       </tr>
@@ -181,7 +181,7 @@
         <td class="text-muted"><%= a.granted_by %></td>
         <td class="text-right">
           <form action="/system-accounts/<%= a.account_id %>/revoke/<%= staff.id %>" method="POST" style="display:inline">
-            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Revoke system account access?')">Revoke</button>
+            <button type="submit" class="btn btn-sm btn-danger" data-confirm="Revoke system account access?">Revoke</button>
           </form>
         </td>
       </tr>

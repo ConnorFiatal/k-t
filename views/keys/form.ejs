@@ -9,7 +9,7 @@
     <div class="form-row">
       <div class="form-group">
         <label for="key_system_id">Key System <span class="required">*</span></label>
-        <select id="key_system_id" name="key_system_id" required onchange="updateParentKeys(this.value)">
+        <select id="key_system_id" name="key_system_id" required>
           <option value="">— Select system —</option>
           <% systems.forEach(s => { %>
             <option value="<%= s.id %>" <%= (key ? key.key_system_id : preSystemId) == s.id ? 'selected' : '' %>><%= s.name %></option>
@@ -68,15 +68,11 @@
 </div>
 
 <script>
-// When system changes, reload parent key options via page reload (simple, no JS fetch needed)
-function updateParentKeys(systemId) {
-  if (!systemId) return;
-  const currentPath = window.location.pathname;
-  const action = document.getElementById('key-form').action;
-  // Only redirect if creating a new key (not editing) and system actually changes
+document.getElementById('key_system_id').addEventListener('change', function () {
+  if (!this.value) return;
   <% if (!key) { %>
-  window.location.href = '/keys/new?system_id=' + systemId;
+  window.location.href = '/keys/new?system_id=' + this.value;
   <% } %>
-}
+});
 </script>
 <%- include('../partials/footer') %>

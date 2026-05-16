@@ -1,49 +1,73 @@
-require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const helmet  = require('helmet');
 const path = require('path');
 const fs = require('fs');
 
-if (!process.env.SESSION_SECRET) {
-  console.error('FATAL: SESSION_SECRET environment variable is not set.');
-  process.exit(1);
+async function loadSecrets() {
+  if (process.env.INFISICAL_CLIENT_ID && process.env.INFISICAL_CLIENT_SECRET) {
+    const { InfisicalSDK } = require('@infisical/sdk');
+    const client = new InfisicalSDK();
+    await client.auth().universalAuth.login({
+      clientId: process.env.INFISICAL_CLIENT_ID,
+      clientSecret: process.env.INFISICAL_CLIENT_SECRET,
+    });
+    const environment = process.env.INFISICAL_ENV || process.env.NODE_ENV || 'dev';
+    const { secrets } = await client.secrets().listSecrets({
+      projectId: process.env.INFISICAL_PROJECT_ID,
+      environment,
+    });
+    for (const s of secrets) process.env[s.secretKey] = s.secretValue;
+    console.log(`[infisical] loaded ${secrets.length} secrets (env: ${environment})`);
+  } else {
+    require('dotenv').config();
+  }
 }
-if (!process.env.ENCRYPTION_KEY) {
-  console.error('FATAL: ENCRYPTION_KEY environment variable is not set. Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
-  process.exit(1);
-}
 
-const DEMO_MODE = process.env.DEMO_MODE === 'true';
+async function main() {
+  await loadSecrets();
 
-const { requireLogin, userCan } = require('./middleware/auth');
-const authRoutes = require('./routes/auth');
-const rolesRoutes = require('./routes/roles');
-const staffRoutes = require('./routes/staff');
-const safesRoutes = require('./routes/safes');
-const keytrakRoutes = require('./routes/keytrak');
-const systemAccountsRoutes = require('./routes/systemAccounts');
-const auditRoutes = require('./routes/audit');
-const adminRoutes = require('./routes/admin');
-const keySystemsRoutes = require('./routes/keySystems');
-const keysRoutes = require('./routes/keys');
-const doorsRoutes = require('./routes/doors');
-const fobProfilesRoutes = require('./routes/fobProfiles');
-const reportsRoutes = require('./routes/reports');
-const importRoutes      = require('./routes/import');
-const emailRoutes       = require('./routes/email');
-const exportRoutes      = require('./routes/export');
-const floorPlansRoutes      = require('./routes/floorPlans');
-const physicalKeysRoutes    = require('./routes/physicalKeys');
-const ringCheckoutRoutes    = require('./routes/ringCheckout');
-const keyTransactionsRoutes = require('./routes/keyTransactions');
-const keyAgreementsRoutes   = require('./routes/keyAgreements');
-const keyReportsRoutes      = require('./routes/keyReports');
-const { setupKeyCron, setupAuditRetentionCron } = require('./routes/keyCron');
-const { db } = require('./db');
+  const DEMO_MODE = process.env.DEMO_MODE === 'true';
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+  if (!process.env.SESSION_SECRET) {
+    console.error('FATAL: SESSION_SECRET environment variable is not set.');
+    process.exit(1);
+  }
+  if (!process.env.ENCRYPTION_KEY) {
+    console.error('FATAL: ENCRYPTION_KEY environment variable is not set. Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+    process.exit(1);
+  }
+
+  const { requireLogin, userCan } = require('./middleware/auth');
+  const { accessLog } = require('./middleware/accessLog');
+  const { globalLimiter } = require('./middleware/rateLimiter');
+  const authRoutes = require('./routes/auth');
+  const rolesRoutes = require('./routes/roles');
+  const staffRoutes = require('./routes/staff');
+  const safesRoutes = require('./routes/safes');
+  const keytrakRoutes = require('./routes/keytrak');
+  const systemAccountsRoutes = require('./routes/systemAccounts');
+  const auditRoutes = require('./routes/audit');
+  const adminRoutes = require('./routes/admin');
+  const keySystemsRoutes = require('./routes/keySystems');
+  const keysRoutes = require('./routes/keys');
+  const doorsRoutes = require('./routes/doors');
+  const fobProfilesRoutes = require('./routes/fobProfiles');
+  const reportsRoutes = require('./routes/reports');
+  const importRoutes      = require('./routes/import');
+  const emailRoutes       = require('./routes/email');
+  const exportRoutes      = require('./routes/export');
+  const floorPlansRoutes      = require('./routes/floorPlans');
+  const physicalKeysRoutes    = require('./routes/physicalKeys');
+  const ringCheckoutRoutes    = require('./routes/ringCheckout');
+  const keyTransactionsRoutes = require('./routes/keyTransactions');
+  const keyAgreementsRoutes   = require('./routes/keyAgreements');
+  const keyReportsRoutes      = require('./routes/keyReports');
+  const { setupKeyCron, setupAuditRetentionCron } = require('./routes/keyCron');
+  const { db } = require('./db');
+
+  const app = express();
+  const PORT = process.env.PORT || 3000;
 
 app.set('trust proxy', 1);
 
@@ -67,6 +91,7 @@ app.use(helmet({
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(globalLimiter);
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
@@ -79,6 +104,8 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production',
   }
 }));
+
+app.use(accessLog);
 
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
@@ -201,13 +228,19 @@ app.use((err, req, res, next) => {
   res.status(500).render('500', { title: 'Server Error', user: req.session?.user || null, currentPath: req.path, flash: null, planSettings: {}, planLicensed: {}, userCan: () => false });
 });
 
-app.listen(PORT, () => {
-  if (DEMO_MODE) {
-    const { seedDemoData } = require('./db/demo-seed');
-    seedDemoData();
-    console.log('[demo] Demo mode enabled — visit /demo to select a role');
-  }
-  console.log(`KeyDog running at http://localhost:${PORT}`);
-  setupKeyCron();
-  setupAuditRetentionCron();
+  app.listen(PORT, () => {
+    if (DEMO_MODE) {
+      const { seedDemoData } = require('./db/demo-seed');
+      seedDemoData();
+      console.log('[demo] Demo mode enabled — visit /demo to select a role');
+    }
+    console.log(`KeyDog running at http://localhost:${PORT}`);
+    setupKeyCron();
+    setupAuditRetentionCron();
+  });
+}
+
+main().catch(err => {
+  console.error('FATAL: failed to start server:', err);
+  process.exit(1);
 });

@@ -1,6 +1,7 @@
 # Environment / secrets
 .env
 .env.*
+!.env.example
 
 # SQLite runtime files
 data/*.db-wal
@@ -10,6 +11,9 @@ data/*.db-shm
 node_modules/
 *.log
 server.err
+
+# Runtime log files
+logs/
 
 # User uploads
 public/uploads/

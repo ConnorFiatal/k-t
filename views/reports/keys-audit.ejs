@@ -2,7 +2,7 @@
 <div class="page-header">
   <h1>Report: Key Custody Audit Log</h1>
   <div class="btn-group">
-    <button onclick="window.print()" class="btn btn-outline no-print">Print / PDF</button>
+    <button class="btn btn-outline no-print print-btn">Print / PDF</button>
     <a href="/reports/keys/audit-log.csv<%= new URLSearchParams(filters).toString() ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(filters).filter(([,v]) => v))).toString() : '' %>" class="btn btn-outline no-print">↓ CSV</a>
     <a href="/reports/keys" class="btn btn-ghost no-print">← Reports</a>
   </div>
