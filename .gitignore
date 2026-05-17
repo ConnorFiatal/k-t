@@ -3,6 +3,39 @@
 .env.*
 !.env.example
 
+# Private keys & certificates (SAML/TLS material belongs in env vars or a
+# secrets manager, never in the repo)
+*.pem
+*.key
+*.crt
+*.cer
+*.der
+*.p12
+*.pfx
+*.keystore
+*.jks
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+
+# Credential / secret files
+secrets.json
+credentials.json
+service-account*.json
+*.secret
+.npmrc
+
+# Cloud provider credentials
+.aws/
+.gcloud/
+gcloud-*.json
+*.tfvars
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+
 # SQLite runtime files
 data/*.db-wal
 data/*.db-shm
