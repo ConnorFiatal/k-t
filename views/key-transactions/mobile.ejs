@@ -1,0 +1,142 @@
+<%- include('../partials/header') %>
+<div class="page-header">
+  <h1>Add Key</h1>
+  <a href="/key-transactions" class="btn btn-ghost no-print">All Transactions →</a>
+</div>
+
+<p class="text-muted" style="margin-bottom:1.25rem">
+  Record a new key copy received from the locksmith. Snap a photo of the receipt or invoice with your camera, or upload a file.
+</p>
+
+<form action="/key-transactions/issued-from-locksmith" method="POST" enctype="multipart/form-data" class="mobile-tx-form">
+
+  <!-- Receipt capture -->
+  <div class="card">
+    <div class="card-section">
+      <label class="mobile-field-label">Locksmith Receipt</label>
+      <div class="receipt-capture" id="receiptCapture">
+        <input type="file" name="receipt" id="receiptInput"
+               accept="image/*,application/pdf" capture="environment" hidden>
+        <div class="receipt-placeholder" id="receiptPlaceholder">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+          <span class="receipt-hint">Tap to photograph or upload<br><small class="text-muted">JPG, PNG, or PDF — up to 20&nbsp;MB</small></span>
+        </div>
+        <img id="receiptPreview" class="receipt-preview" alt="Receipt preview" hidden>
+        <div id="receiptFileName" class="receipt-filename" hidden></div>
+      </div>
+      <button type="button" id="receiptClear" class="btn btn-sm btn-ghost" hidden>Remove receipt</button>
+    </div>
+  </div>
+
+  <!-- Key details -->
+  <div class="card">
+    <div class="card-section">
+      <div class="form-group">
+        <label>Stamp Number <span class="required">*</span></label>
+        <input type="text" name="stamp_number" required placeholder="e.g. K2024-042"
+               autocapitalize="characters" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Key Type <span class="required">*</span></label>
+        <select name="key_type_id" required>
+          <option value="">— Select key type —</option>
+          <% allKeys.forEach(k => { %>
+            <option value="<%= k.id %>"><%= k.key_number %> — <%= k.system_name %> (<%= k.level %>)</option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Assign to Physical Ring</label>
+        <select name="keytrak_ring_id">
+          <option value="">— Unassigned —</option>
+          <% keyrings.forEach(r => { %>
+            <option value="<%= r.id %>">Ring <%= r.ring_number %><%= r.description ? ' — ' + r.description : '' %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Date Received</label>
+        <input type="date" name="transaction_date" value="<%= new Date().toISOString().split('T')[0] %>">
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <input type="text" name="notes" placeholder="Locksmith name, work order #, etc.">
+      </div>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary btn-block">Record Key from Locksmith</button>
+  </div>
+</form>
+
+<!-- Recently added -->
+<div class="card" style="margin-top:1.5rem">
+  <div class="card-header"><h2>Recently Added</h2></div>
+  <% if (recentLocksmith.length === 0) { %>
+    <p class="empty-state-sm">No keys received from a locksmith yet.</p>
+  <% } else { %>
+  <table class="table table-sm">
+    <thead><tr><th>Date</th><th>Key</th><th>Receipt</th></tr></thead>
+    <tbody>
+      <% recentLocksmith.forEach(t => { %>
+      <tr>
+        <td class="text-muted text-sm"><%= t.transaction_date %></td>
+        <td><a href="/physical-keys/<%= t.physical_key_id %>"><%= t.stamp_number %></a></td>
+        <td>
+          <% if (t.receipt_filename) { %>
+            <a href="/uploads/receipts/<%= t.receipt_filename %>" target="_blank" class="text-sm">📎 View</a>
+          <% } else { %>—<% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<script>
+(function() {
+  const input       = document.getElementById('receiptInput');
+  const capture     = document.getElementById('receiptCapture');
+  const placeholder = document.getElementById('receiptPlaceholder');
+  const preview     = document.getElementById('receiptPreview');
+  const fileName    = document.getElementById('receiptFileName');
+  const clearBtn    = document.getElementById('receiptClear');
+
+  capture.addEventListener('click', function(e) {
+    if (e.target === clearBtn) return;
+    input.click();
+  });
+
+  input.addEventListener('change', function() {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    placeholder.hidden = true;
+    clearBtn.hidden = false;
+    if (file.type.startsWith('image/')) {
+      preview.src = URL.createObjectURL(file);
+      preview.hidden = false;
+      fileName.hidden = true;
+    } else {
+      preview.hidden = true;
+      fileName.textContent = '📄 ' + file.name;
+      fileName.hidden = false;
+    }
+  });
+
+  clearBtn.addEventListener('click', function() {
+    input.value = '';
+    if (preview.src) URL.revokeObjectURL(preview.src);
+    preview.hidden = true;
+    preview.removeAttribute('src');
+    fileName.hidden = true;
+    placeholder.hidden = false;
+    clearBtn.hidden = true;
+  });
+})();
+</script>
+<%- include('../partials/footer') %>

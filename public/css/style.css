@@ -1900,3 +1900,54 @@ html.dark .btn-dark-toggle .icon-moon { display: none; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
   .btn-group { flex-wrap: wrap; }
 }
+
+/* ── Mobile receipt capture ──────────────────────────────────────────────── */
+.mobile-tx-form .card { margin-bottom: 1rem; }
+
+.mobile-field-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+}
+
+.receipt-capture {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.15s, background 0.15s;
+}
+.receipt-capture:active { border-color: var(--primary); }
+
+.receipt-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 2.25rem 1rem;
+  color: var(--primary);
+  text-align: center;
+}
+.receipt-hint { color: var(--text); font-weight: 500; line-height: 1.4; }
+
+.receipt-preview {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  background: #000;
+}
+
+.receipt-filename {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  font-weight: 500;
+  word-break: break-all;
+}
+
+#receiptClear { margin-top: 0.75rem; }
+
+.receipt-capture [hidden],
+#receiptClear[hidden] { display: none; }

@@ -1,8 +1,17 @@
 <%- include('../partials/header') %>
 <div class="page-header">
   <h1>Key Transactions</h1>
-  <a href="/physical-keys" class="btn btn-ghost no-print">← Physical Keys</a>
+  <div class="btn-group no-print">
+    <a href="/key-transactions/mobile" class="btn btn-ghost">📱 Quick Add (Mobile)</a>
+    <a href="/physical-keys" class="btn btn-ghost">← Physical Keys</a>
+  </div>
 </div>
+
+<% if (isMobile) { %>
+<a href="/key-transactions/mobile" class="flash flash-success no-print" style="display:block;text-decoration:none">
+  📱 On mobile? Use the <strong>Quick Add</strong> page to photograph a receipt and log a new key faster.
+</a>
+<% } %>
 
 <p class="text-muted" style="margin-bottom:1.5rem">
   Record a key lifecycle event. Every transaction is date/time stamped and attributed to the currently logged-in user (<strong><%= user.username %></strong>).

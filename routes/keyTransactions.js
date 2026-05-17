@@ -96,6 +96,31 @@ router.get('/', requirePermission('key_transactions.view'), (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════
+// GET /mobile — mobile-optimized "add key from locksmith" page
+// ══════════════════════════════════════════════════════════════════════════
+router.get('/mobile', requirePermission('key_transactions.view'), (req, res) => {
+  const allKeys = db.prepare(`
+    SELECT k.id, k.key_number, k.level, ks.name AS system_name
+    FROM keys k JOIN key_systems ks ON ks.id = k.key_system_id
+    ORDER BY ks.name, k.level, k.key_number
+  `).all();
+
+  const keyrings = db.prepare('SELECT id, ring_number, description FROM keyrings ORDER BY ring_number').all();
+
+  const recentLocksmith = db.prepare(`
+    SELECT kt.transaction_date, kt.receipt_filename, pk.id AS physical_key_id, pk.stamp_number
+    FROM key_transactions kt
+    JOIN physical_keys pk ON pk.id = kt.physical_key_id
+    WHERE kt.transaction_type = 'issued_from_locksmith'
+    ORDER BY kt.id DESC LIMIT 8
+  `).all();
+
+  res.render('key-transactions/mobile', {
+    title: 'Add Key', allKeys, keyrings, recentLocksmith
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
 // POST /issued-from-locksmith — receive new key from locksmith
 // ══════════════════════════════════════════════════════════════════════════
 router.post('/issued-from-locksmith', requirePermission('key_transactions.create'), receiptUpload.single('receipt'), (req, res) => {
