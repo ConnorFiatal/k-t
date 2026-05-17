@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login — KeyDog</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .sso-divider { display: flex; align-items: center; text-align: center; margin: 1.25rem 0; color: var(--text-muted, #888); font-size: 0.85rem; }
+    .sso-divider::before, .sso-divider::after { content: ""; flex: 1; border-bottom: 1px solid var(--border, #ddd); }
+    .sso-divider span { padding: 0 0.75rem; }
+    .btn-sso { display: block; text-align: center; text-decoration: none; }
+    .sso-note { margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted, #888); text-align: center; }
+  </style>
 </head>
 <body class="login-body">
   <div class="login-wrapper">
@@ -16,17 +23,30 @@
       <% if (flash && flash.error) { %>
         <div class="flash flash-error"><%= flash.error %></div>
       <% } %>
-      <form action="/login" method="POST" class="login-form">
-        <div class="form-group">
-          <label for="username">Username</label>
-          <input type="text" id="username" name="username" required autofocus autocomplete="username">
-        </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" name="password" required autocomplete="current-password">
-        </div>
-        <button type="submit" class="btn btn-primary btn-block">Sign In</button>
-      </form>
+      <% if (ssoOnly) { %>
+        <a href="/auth/saml" class="btn btn-primary btn-block btn-sso">
+          Sign in with your institution
+        </a>
+        <p class="sso-note">This organisation requires sign-in via your institution.</p>
+      <% } else { %>
+        <form action="/login" method="POST" class="login-form">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required autofocus autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required autocomplete="current-password">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+        </form>
+        <% if (ssoEnabled) { %>
+          <div class="sso-divider"><span>or</span></div>
+          <a href="/auth/saml" class="btn btn-secondary btn-sso">
+            Sign in with your institution
+          </a>
+        <% } %>
+      <% } %>
     </div>
   </div>
 </body>

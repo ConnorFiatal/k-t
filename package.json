@@ -9,7 +9,9 @@
   },
   "dependencies": {
     "@infisical/sdk": "^5.0.2",
+    "@node-saml/passport-saml": "^5.1.0",
     "bcryptjs": "^2.4.3",
+    "connect-sqlite3": "^0.9.16",
     "csv-parse": "^6.2.1",
     "dotenv": "^17.4.2",
     "ejs": "^3.1.9",
@@ -19,6 +21,7 @@
     "helmet": "^8.1.0",
     "multer": "^2.1.1",
     "node-cron": "^4.2.1",
-    "nodemailer": "^8.0.7"
+    "nodemailer": "^8.0.7",
+    "passport": "^0.7.0"
   }
 }

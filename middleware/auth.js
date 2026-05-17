@@ -1,11 +1,29 @@
 const { auditLog } = require('../db');
 
-function requireLogin(req, res, next) {
-  if (!req.session || !req.session.user) {
-    req.session.flash = { error: 'Please log in to continue.' };
-    return res.redirect('/login');
+// Primary authentication gate — backed by passport. Both local password login
+// and SAML SSO establish a passport session, so req.isAuthenticated() is the
+// single source of truth for "is this request logged in".
+function requireAuth(req, res, next) {
+  if (req.isAuthenticated && req.isAuthenticated()) return next();
+  req.session.returnTo = req.originalUrl;
+  req.session.flash = { error: 'Please log in to continue.' };
+  return res.redirect('/login');
+}
+
+// Restricts a route tree to administrators. super_admin is treated as an
+// administrator (it is a strict superset of admin), otherwise super_admins
+// would be locked out of /admin.
+function requireAdmin(req, res, next) {
+  const u = req.session.user;
+  if (u && (u.is_super_admin || u.role_name === 'admin' || u.role_name === 'super_admin')) {
+    return next();
   }
-  next();
+  if (u) {
+    auditLog('PERMISSION_DENIED', 'ACCESS', null, 'admin', null, null, u.username,
+      `${req.method} ${req.path}`, req.ip, req.get('user-agent'));
+  }
+  req.session.flash = { error: 'Administrator access required.' };
+  return res.redirect('/');
 }
 
 function requirePermission(permission) {
@@ -48,4 +66,4 @@ function userCan(user, permission) {
   return user.is_super_admin || (Array.isArray(user.permissions) && user.permissions.includes(permission));
 }
 
-module.exports = { requireLogin, requirePermission, requirePlanFeature, userCan };
+module.exports = { requireAuth, requireAdmin, requirePermission, requirePlanFeature, userCan };

@@ -3,6 +3,9 @@ const bcrypt = require('bcryptjs');
 const { db, auditLog } = require('../db');
 const { sendEmail } = require('./email');
 const { requirePermission } = require('../middleware/auth');
+const { isSsoOnly } = require('../lib/authConfig');
+
+const VALID_AUTH_MODES = ['local', 'sso', 'both'];
 
 const router = express.Router();
 
@@ -88,20 +91,32 @@ router.post('/users', requirePermission('admin.users'), async (req, res) => {
 });
 
 router.get('/users/:id/edit-role', requirePermission('admin.users'), (req, res) => {
-  const user = db.prepare('SELECT id, username, role_id FROM admin_users WHERE id = ?').get(req.params.id);
+  const user = db.prepare('SELECT id, username, role_id, auth_mode FROM admin_users WHERE id = ?').get(req.params.id);
   if (!user) { req.session.flash = { error: 'User not found.' }; return res.redirect('/admin/users'); }
   const roles = db.prepare('SELECT * FROM roles ORDER BY is_system DESC, label').all();
-  res.render('admin/edit-user-role', { title: `Edit Role — ${user.username}`, targetUser: user, roles });
+  res.render('admin/edit-user-role', { title: `Edit Role — ${user.username}`, targetUser: user, roles, ssoOnly: isSsoOnly() });
 });
 
 router.post('/users/:id/edit-role', requirePermission('admin.users'), (req, res) => {
-  const user = db.prepare('SELECT id, username FROM admin_users WHERE id = ?').get(req.params.id);
+  const user = db.prepare('SELECT id, username, auth_mode FROM admin_users WHERE id = ?').get(req.params.id);
   if (!user) { req.session.flash = { error: 'User not found.' }; return res.redirect('/admin/users'); }
 
-  const { role_id } = req.body;
+  const { role_id, auth_mode } = req.body;
+  if (auth_mode !== undefined && !VALID_AUTH_MODES.includes(auth_mode)) {
+    req.session.flash = { error: 'Invalid authentication mode.' };
+    return res.redirect(`/admin/users/${user.id}/edit-role`);
+  }
+
   const roleRow = role_id ? db.prepare('SELECT id FROM roles WHERE id = ?').get(role_id) : null;
   db.prepare('UPDATE admin_users SET role_id = ? WHERE id = ?').run(roleRow?.id ?? null, user.id);
   auditLog('EDIT_USER_ROLE', 'ADMIN_USER', user.id, user.username, null, null, req.session.user.username);
+
+  if (auth_mode !== undefined && auth_mode !== user.auth_mode) {
+    db.prepare('UPDATE admin_users SET auth_mode = ? WHERE id = ?').run(auth_mode, user.id);
+    auditLog('UPDATE_AUTH_MODE', 'ADMIN_USER', user.id, user.username, null, null, req.session.user.username,
+      `auth_mode changed from ${user.auth_mode} to ${auth_mode} by ${req.session.user.username}`);
+  }
+
   req.session.flash = { success: `Role updated for "${user.username}".` };
   res.redirect('/admin/users');
 });

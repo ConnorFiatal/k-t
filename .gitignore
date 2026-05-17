@@ -7,6 +7,11 @@
 data/*.db-wal
 data/*.db-shm
 
+# Session store (connect-sqlite3)
+db/sessions.db
+db/sessions.db-wal
+db/sessions.db-shm
+
 # Node
 node_modules/
 *.log

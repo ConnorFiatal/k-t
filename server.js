@@ -1,5 +1,6 @@
 const express = require('express');
 const session = require('express-session');
+const SQLiteStore = require('connect-sqlite3')(session);
 const helmet  = require('helmet');
 const path = require('path');
 const fs = require('fs');
@@ -36,7 +37,13 @@ async function main() {
     process.exit(1);
   }
 
-  const { requireLogin, userCan } = require('./middleware/auth');
+  const authConfig = require('./lib/authConfig');
+  if (authConfig.isSsoOnly() && !process.env.SAML_ENTRY_POINT) {
+    console.warn('WARNING: AUTH_DEPLOYMENT_MODE is sso_only but SAML_ENTRY_POINT is not configured. All logins will fail.');
+  }
+
+  const { requireAuth, requireAdmin, userCan } = require('./middleware/auth');
+  const { passport } = require('./lib/saml');
   const { accessLog } = require('./middleware/accessLog');
   const { globalLimiter } = require('./middleware/rateLimiter');
   const authRoutes = require('./routes/auth');
@@ -92,20 +99,27 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(globalLimiter);
 
 app.use(session({
+  store: new SQLiteStore({ db: 'sessions.db', dir: path.join(__dirname, 'db') }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
     maxAge: 8 * 60 * 60 * 1000,
-    sameSite: 'strict',
+    sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
   }
 }));
 
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(accessLog);
 
 app.use((req, res, next) => {
+  // Keep req.session.user in sync with the passport-deserialized user so the
+  // rest of the app (views, requirePermission) can keep reading req.session.user.
+  if (req.user) req.session.user = req.user;
   res.locals.user = req.session.user || null;
   res.locals.currentPath = req.path;
   res.locals.flash = req.session.flash || null;
@@ -150,7 +164,7 @@ app.use((req, res, next) => {
 
 
 app.use('/', authRoutes);
-app.use(requireLogin);
+app.use(requireAuth);
 
 // Serve uploads directory — requires login (mounted after requireLogin)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
@@ -183,6 +197,7 @@ app.use('/safes', safesRoutes);
 app.use('/keytrak', keytrakRoutes);
 app.use('/system-accounts', systemAccountsRoutes);
 app.use('/audit', auditRoutes);
+app.use('/admin', requireAdmin);
 app.use('/admin', adminRoutes);
 app.use('/admin/roles', rolesRoutes);
 app.use('/key-systems', keySystemsRoutes);

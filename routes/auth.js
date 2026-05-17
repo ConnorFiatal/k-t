@@ -2,6 +2,8 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const rateLimit = require('express-rate-limit');
 const { db, auditLog } = require('../db');
+const { passport, samlStrategy } = require('../lib/saml');
+const { isSsoOnly, isSsoConfigured } = require('../lib/authConfig');
 
 const router = express.Router();
 
@@ -15,13 +17,38 @@ const loginLimiter = rateLimit({
   }
 });
 
+function renderLogin(req, res, flash, status) {
+  if (status) res.status(status);
+  res.render('login', {
+    title: 'Login',
+    flash: flash || null,
+    user: null,
+    currentPath: '/login',
+    ssoEnabled: isSsoConfigured(),
+    ssoOnly: isSsoOnly(),
+  });
+}
+
 router.get('/login', (req, res) => {
-  if (req.session.user) return res.redirect('/');
-  res.render('login', { title: 'Login', flash: req.session.flash || null, user: null, currentPath: '/login' });
-  delete req.session.flash;
+  if (req.isAuthenticated()) return res.redirect('/');
+  // The global locals middleware already consumed req.session.flash into
+  // res.locals.flash. A session flash takes precedence over an ?error= query.
+  let flash = res.locals.flash || null;
+  if (!flash && req.query.error === 'sso_failed') {
+    flash = { error: 'SSO sign-in failed. Contact your administrator.' };
+  } else if (!flash && req.query.error === 'sso_not_configured') {
+    flash = { error: 'SSO is not configured for this deployment. Contact your administrator.' };
+  }
+  renderLogin(req, res, flash);
 });
 
 router.post('/login', loginLimiter, (req, res) => {
+  // sso_only deployments disable local login at the route level for everyone.
+  if (isSsoOnly()) {
+    return renderLogin(req, res,
+      { error: 'This deployment requires SSO. Local login is disabled.' }, 403);
+  }
+
   const { username, password } = req.body;
   if (!username || !password) {
     req.session.flash = { error: 'Username and password are required.' };
@@ -36,46 +63,79 @@ router.post('/login', loginLimiter, (req, res) => {
     return res.redirect('/login');
   }
 
-  // Issue 4 — regenerate session ID after login to prevent session fixation
-  const roleRow = user.role_id
-    ? db.prepare('SELECT id, name, is_system FROM roles WHERE id = ?').get(user.role_id)
-    : null;
-  const isSuperAdmin = roleRow?.name === 'super_admin';
-  const permissions = isSuperAdmin
-    ? []
-    : (db.prepare('SELECT permission FROM role_permissions WHERE role_id = ?').all(user.role_id ?? 0)
-        .map(r => r.permission));
+  // Mixed mode: an account flagged sso-only must not authenticate with a password.
+  if (user.auth_mode === 'sso') {
+    req.session.flash = { error: "Your account uses SSO. Use the 'Sign in with your institution' button." };
+    return res.redirect('/login');
+  }
 
-  const userData = {
-    id: user.id,
-    username: user.username,
-    role_id: user.role_id ?? null,
-    role_name: roleRow?.name ?? null,
-    role_label: roleRow ? db.prepare('SELECT label FROM roles WHERE id = ?').get(user.role_id)?.label : null,
-    is_super_admin: isSuperAdmin,
-    permissions,
-  };
-
-  req.session.regenerate((err) => {
+  // passport's req.login regenerates the session, preventing session fixation.
+  req.login(user, (err) => {
     if (err) return res.redirect('/login');
-    req.session.user = userData;
     db.prepare('UPDATE admin_users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
     auditLog('LOGIN', 'AUTH', user.id, user.username, null, null, user.username,
       null, req.ip, req.get('user-agent'));
-    res.redirect('/');
+    const dest = req.session.returnTo || '/';
+    delete req.session.returnTo;
+    res.redirect(dest);
   });
 });
 
-router.post('/logout', (req, res) => {
+// ── SAML SSO ────────────────────────────────────────────────────────────────
+
+router.get('/auth/saml', (req, res, next) => {
+  if (!isSsoConfigured() || !samlStrategy) {
+    return res.redirect('/login?error=sso_not_configured');
+  }
+  passport.authenticate('saml', { failureRedirect: '/login?error=sso_failed' })(req, res, next);
+});
+
+router.post('/auth/saml/callback', (req, res, next) => {
+  if (!samlStrategy) return res.redirect('/login?error=sso_not_configured');
+  // Custom callback so passport-saml failures (bad cert, clock skew, missing
+  // assertion, unknown user) become a clean redirect rather than a 500.
+  passport.authenticate('saml', (err, user, info) => {
+    if (err || !user) {
+      req.session.flash = { error: (info && info.message) || 'SSO sign-in failed. Contact your administrator.' };
+      return res.redirect('/login?error=sso_failed');
+    }
+    req.login(user, (loginErr) => {
+      if (loginErr) return res.redirect('/login?error=sso_failed');
+      auditLog('SSO_LOGIN', 'user', req.user.id, req.user.username, null, null,
+        req.user.email || req.user.username, 'SSO login via SAML', req.ip, req.get('user-agent'));
+      const dest = req.session.returnTo || '/';
+      delete req.session.returnTo;
+      res.redirect(dest);
+    });
+  })(req, res, next);
+});
+
+router.get('/auth/saml/metadata', (req, res) => {
+  if (!samlStrategy) {
+    return res.status(503).type('text/plain').send('SAML is not configured for this deployment.');
+  }
+  const spCert = process.env.SAML_SP_CERT || null;
+  res.type('application/xml');
+  res.send(samlStrategy.generateServiceProviderMetadata(spCert, spCert));
+});
+
+// ── Logout ──────────────────────────────────────────────────────────────────
+
+function doLogout(req, res) {
   const { id: userId, username } = req.session.user || {};
   const ip = req.ip;
   const ua = req.get('user-agent');
-  req.session.destroy(() => {
-    if (username) {
-      auditLog('LOGOUT', 'AUTH', userId || null, username, null, null, username, null, ip, ua);
-    }
-    res.redirect('/login');
+  req.logout((err) => {
+    req.session.destroy(() => {
+      if (username) {
+        auditLog('LOGOUT', 'AUTH', userId || null, username, null, null, username, null, ip, ua);
+      }
+      res.redirect('/login');
+    });
   });
-});
+}
+
+router.get('/auth/logout', doLogout);
+router.post('/logout', doLogout);
 
 module.exports = router;

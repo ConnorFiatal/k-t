@@ -17,6 +17,17 @@
         <% }) %>
       </select>
     </div>
+    <div class="form-group">
+      <label for="auth_mode">Authentication Mode</label>
+      <select id="auth_mode" name="auth_mode">
+        <option value="local" <%= targetUser.auth_mode === 'local' ? 'selected' : '' %>>Local password only</option>
+        <option value="sso" <%= targetUser.auth_mode === 'sso' ? 'selected' : '' %>>SSO only</option>
+        <option value="both" <%= targetUser.auth_mode === 'both' ? 'selected' : '' %>>Local password + SSO</option>
+      </select>
+      <% if (ssoOnly) { %>
+        <p class="form-hint">This deployment is running in SSO-only mode. This setting will take effect if the deployment is switched to mixed mode.</p>
+      <% } %>
+    </div>
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">Save Role</button>
       <a href="/admin/users" class="btn btn-ghost">Cancel</a>

@@ -316,6 +316,27 @@ function initializeDatabase() {
   try { db.exec('ALTER TABLE audit_log ADD COLUMN ip_address TEXT'); } catch (_) {}
   try { db.exec('ALTER TABLE audit_log ADD COLUMN user_agent TEXT'); } catch (_) {}
 
+  // ── Migration 002: SSO / SAML support ─────────────────────────────────────
+  try {
+    const migrationPath = path.join(__dirname, 'migrations', '002_sso.sql');
+    if (fs.existsSync(migrationPath)) {
+      // Strip line comments before splitting so a ';' inside a comment can't
+      // break statement boundaries.
+      const sql = fs.readFileSync(migrationPath, 'utf8')
+        .split('\n')
+        .map(line => line.replace(/--.*$/, ''))
+        .join('\n');
+      for (const statement of sql.split(';')) {
+        const trimmed = statement.trim();
+        if (!trimmed) continue;
+        // ALTER TABLE fails if the column already exists — expected, idempotent.
+        try { db.exec(trimmed); } catch (_) {}
+      }
+    }
+  } catch (e) {
+    console.error('[db] SSO migration failed:', e.message);
+  }
+
   // ── Seed default roles ─────────────────────────────────────────────────────
   const systemRoles = [
     { name: 'super_admin', label: 'Super Admin', description: 'Full access to everything. Cannot be modified.', is_system: 1 },
